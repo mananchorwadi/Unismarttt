@@ -29,7 +29,6 @@ export default function RegisterForm({ activeRole, onRoleChange }: RegisterFormP
   const form = useForm<z.infer<typeof registerUserSchema>>({
     resolver: zodResolver(registerUserSchema),
     defaultValues: {
-      username: "",
       password: "",
       role: activeRole,
       fullName: "",

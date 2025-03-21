@@ -5,7 +5,7 @@ import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
-import { loginSchema, registerUserSchema, User as SelectUser } from "@shared/schema";
+import { loginSchema, registerUserSchema, User as SelectUser, InsertUser } from "@shared/schema";
 import { ZodError } from "zod";
 import { formatZodError } from "./utils";
 
