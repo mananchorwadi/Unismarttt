@@ -29,19 +29,21 @@ export const insertUserSchema = createInsertSchema(users).pick({
 });
 
 // Add validation for user registration
-export const registerUserSchema = insertUserSchema.extend({
-  universityId: z.string()
-    .refine(val => {
-      // Faculty IDs must match F-XXXXX pattern
-      // Student IDs must match S-XXXXX pattern
-      const facultyPattern = /^F-\d{5}$/;
-      const studentPattern = /^S-\d{5}$/;
-      return facultyPattern.test(val) || studentPattern.test(val);
-    }, "University ID must be in format F-XXXXX (faculty) or S-XXXXX (student)"),
-  password: z.string().min(6, "Password must be at least 6 characters long"),
-  email: z.string().email("Please provide a valid email address"),
-  role: z.enum([ROLES.FACULTY, ROLES.STUDENT])
-});
+export const registerUserSchema = insertUserSchema
+  .omit({ username: true }) // Remove username from required fields
+  .extend({
+    universityId: z.string()
+      .refine(val => {
+        // Faculty IDs must match F-XXXXX pattern
+        // Student IDs must match S-XXXXX pattern
+        const facultyPattern = /^F-\d{5}$/;
+        const studentPattern = /^S-\d{5}$/;
+        return facultyPattern.test(val) || studentPattern.test(val);
+      }, "University ID must be in format F-XXXXX (faculty) or S-XXXXX (student)"),
+    password: z.string().min(6, "Password must be at least 6 characters long"),
+    email: z.string().email("Please provide a valid email address"),
+    role: z.enum([ROLES.FACULTY, ROLES.STUDENT])
+  });
 
 // Login schema
 export const loginSchema = z.object({

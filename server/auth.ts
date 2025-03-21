@@ -93,23 +93,23 @@ export function setupAuth(app: Express) {
   // Register endpoint
   app.post("/api/register", async (req, res, next) => {
     try {
-      // Validate the registration data
-      const userData = registerUserSchema.parse(req.body);
+      // Validate the registration data using our schema that omits username
+      const validatedData = registerUserSchema.parse(req.body);
       
       // Check if user already exists with university ID
-      const existingUserByUniversityId = await storage.getUserByUniversityId(userData.universityId);
+      const existingUserByUniversityId = await storage.getUserByUniversityId(validatedData.universityId);
       if (existingUserByUniversityId) {
         return res.status(400).json({ message: "University ID already exists" });
       }
       
       // Check if email already exists
-      const existingUserByEmail = await storage.getUserByEmail(userData.email);
+      const existingUserByEmail = await storage.getUserByEmail(validatedData.email);
       if (existingUserByEmail) {
         return res.status(400).json({ message: "Email already registered" });
       }
       
-      // Determine the username from university ID (for simplicity)
-      const username = userData.universityId.toLowerCase();
+      // Generate username from university ID
+      const username = validatedData.universityId.toLowerCase();
       
       // Check if username already exists
       const existingUser = await storage.getUserByUsername(username);
@@ -118,14 +118,17 @@ export function setupAuth(app: Express) {
       }
       
       // Hash password
-      const hashedPassword = await hashPassword(userData.password);
+      const hashedPassword = await hashPassword(validatedData.password);
       
-      // Create user
-      const user = await storage.createUser({
-        ...userData,
+      // Prepare user data with username included
+      const userData: InsertUser = {
+        ...validatedData,
         username,
         password: hashedPassword
-      });
+      };
+      
+      // Create user
+      const user = await storage.createUser(userData);
       
       // Remove password from response
       const { password, ...userWithoutPassword } = user;
