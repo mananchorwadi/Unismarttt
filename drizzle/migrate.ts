@@ -1,26 +1,37 @@
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import { migrate } from 'drizzle-orm/neon-serverless/migrator';
-import { Pool } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import { migrate } from 'drizzle-orm/postgres-js/migrator';
+import postgres from 'postgres';
 
-// Create a pool instance
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
+// This script will create the necessary tables in the database
 
-const db = drizzle(pool);
-
-// This will run migrations on the database, creating tables if they don't exist
-// based on the schema definition
 async function runMigrations() {
-  console.log('Running migrations...');
-  try {
-    await migrate(db, { migrationsFolder: 'drizzle/migrations' });
-    console.log('Migrations completed successfully');
-  } catch (error) {
-    console.error('Error running migrations:', error);
+  console.log('Running database migrations...');
+  const connectionString = process.env.DATABASE_URL;
+  console.log('Connection string available:', !!connectionString);
+  
+  if (!connectionString) {
+    console.error('DATABASE_URL environment variable is not set');
     process.exit(1);
-  } finally {
-    await pool.end();
+  }
+  
+  try {
+    // For migrations, we need a new connection with SSL disabled for local development
+    const migrationClient = postgres(connectionString, { max: 1 });
+    
+    // Create a drizzle instance using the client
+    const db = drizzle(migrationClient);
+    
+    // Run migrations programmatically
+    await migrate(db, { migrationsFolder: './drizzle' });
+    
+    console.log('Migrations completed successfully');
+    
+    // Close the connection
+    await migrationClient.end();
+    console.log('Database connection closed');
+  } catch (error) {
+    console.error('Migration failed:', error);
+    process.exit(1);
   }
 }
 
