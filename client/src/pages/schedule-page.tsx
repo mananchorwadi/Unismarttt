@@ -22,7 +22,7 @@ export default function SchedulePage() {
   const [view, setView] = useState<"day" | "week" | "month">("week");
   const [filter, setFilter] = useState<string>("all");
   
-  if (!user) return null;
+  if (!user) return <div className="hidden"></div>; // Return empty div instead of null
   
   const isFaculty = user.role === ROLES.FACULTY;
   
