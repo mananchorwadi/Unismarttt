@@ -20,6 +20,7 @@ const facultyNavItems = [
   { icon: Users, label: "Students", href: "/students" },
   { icon: FileText, label: "Assignments", href: "/assignments" },
   { icon: Calendar, label: "Schedule", href: "/schedule" },
+  { icon: GraduationCap, label: "Attendance", href: "/attendance" },
   { icon: MessageSquare, label: "Messages", href: "/messages" },
   { icon: Settings, label: "Settings", href: "/settings" },
 ];
