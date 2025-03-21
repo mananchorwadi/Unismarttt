@@ -1,20 +1,18 @@
 import { users, type User, type InsertUser } from "@shared/schema";
 import session from "express-session";
 import { eq } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/neon-serverless";
-import { Pool } from "@neondatabase/serverless";
-import connectPg from "connect-pg-simple";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
+import createMemoryStore from "memorystore";
 
-// Database connection
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
+// Memory store for sessions as a fallback
+const MemoryStore = createMemoryStore(session);
 
-// Initialize drizzle with the PostgreSQL pool
-const db = drizzle(pool);
+// Create postgres client
+const client = postgres(process.env.DATABASE_URL as string);
 
-// Set up PostgreSQL session store
-const PostgresSessionStore = connectPg(session);
+// Initialize drizzle with the PostgreSQL client
+const db = drizzle(client);
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -22,17 +20,17 @@ export interface IStorage {
   getUserByUniversityId(universityId: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  sessionStore: session.SessionStore;
+  sessionStore: session.Store;
 }
 
 export class DatabaseStorage implements IStorage {
-  sessionStore: session.SessionStore;
+  sessionStore: session.Store;
 
   constructor() {
-    this.sessionStore = new PostgresSessionStore({ 
-      pool, 
-      createTableIfMissing: true,
-      tableName: 'user_sessions'
+    // Using memory store for simplicity - can be changed to PostgreSQL session store
+    // if that becomes necessary, but this avoids WebSocket issues
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000, // prune expired entries every 24h
     });
   }
 
