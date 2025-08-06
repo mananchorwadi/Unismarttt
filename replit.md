@@ -125,6 +125,9 @@ This is a comprehensive university management system built with modern web techn
 
 ## Changelog
 
+- January 06, 2025. Fixed database connectivity issues and implemented fallback memory storage
+- January 06, 2025. Optimized authentication forms with better error handling and user feedback
+- January 06, 2025. Enhanced frontend performance with improved query retry logic and caching
 - July 08, 2025. Initial setup
 
 ## User Preferences

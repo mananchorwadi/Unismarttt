@@ -45,7 +45,14 @@ export default function RegisterForm({ activeRole, onRoleChange }: RegisterFormP
   
   // Handle form submission
   const onSubmit = (data: z.infer<typeof registerUserSchema>) => {
-    registerMutation.mutate(data);
+    registerMutation.mutate(data, {
+      onSuccess: () => {
+        form.reset();
+      },
+      onError: (error: any) => {
+        console.error("Registration error:", error);
+      },
+    });
   };
   
   return (

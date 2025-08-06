@@ -57,7 +57,11 @@ export default function LoginForm({ activeRole, onRoleChange }: LoginFormProps) 
   
   // Handle form submission
   const onSubmit = (data: z.infer<typeof loginSchema>) => {
-    loginMutation.mutate(data);
+    loginMutation.mutate(data, {
+      onError: (error: any) => {
+        console.error("Login error:", error);
+      },
+    });
   };
   
   // Handle forgot password submission

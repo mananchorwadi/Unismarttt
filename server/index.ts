@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { initializeDatabase } from "./initialize-db";
 
 const app = express();
 app.use(express.json());
@@ -38,6 +39,9 @@ app.use((req, res, next) => {
 
 (async () => {
   try {
+    // Initialize database tables (non-blocking)
+    initializeDatabase().catch(console.warn);
+    
     const server = await registerRoutes(app);
 
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

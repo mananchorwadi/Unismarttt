@@ -99,8 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const forgotPasswordMutation = useMutation({
     mutationFn: async (data: ForgotPassword) => {
-      const res = await apiRequest("POST", "/api/forgot-password", data);
-      return res;
+      await apiRequest("POST", "/api/forgot-password", data);
     },
     onSuccess: () => {
       toast({
