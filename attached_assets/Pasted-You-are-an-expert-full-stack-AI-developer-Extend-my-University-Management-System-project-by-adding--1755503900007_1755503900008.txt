@@ -1,0 +1,139 @@
+You are an expert full-stack AI developer. Extend my University Management System project by adding a Free Classroom Utilization feature inside the Student Section only.
+
+🔹 Feature Description
+
+Students should be able to see which classrooms are free at any given time slot, based on uploaded college timetables (PDFs).
+
+🔹 Requirements
+Student Role (UI + Functionality)
+
+Upload & Process Timetables
+
+Admin uploads timetable PDFs for all departments/sections.
+
+System extracts data (course, faculty, classroom, day, start time, end time) using PDF parsing (Camelot/Tabula/pdfplumber).
+
+Store structured timetable in database.
+
+Free Classroom Query (Main Feature)
+
+Student selects:
+
+Day (default = today).
+
+Time slot (default = current time).
+
+System compares all classrooms vs occupied classrooms (from timetable).
+
+Shows list of free classrooms.
+
+Results Section
+
+Display available classrooms in a table:
+
+Room No
+
+Free From – Free Until (next busy time)
+
+Allow filtering by building/hostel/block.
+
+Extra Student Utilities (Optional)
+
+View entire day availability (slot-wise free rooms).
+
+Color-coded timetable (green = free, red = occupied).
+
+🔹 Database Design
+CREATE TABLE classrooms (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    room_no VARCHAR(20) UNIQUE
+);
+
+CREATE TABLE timetable (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    room_id INT,
+    course_name VARCHAR(100),
+    faculty_name VARCHAR(100),
+    day_of_week ENUM('Mon','Tue','Wed','Thu','Fri','Sat'),
+    start_time TIME,
+    end_time TIME,
+    FOREIGN KEY (room_id) REFERENCES classrooms(id)
+);
+
+🔹 Backend Requirements
+
+API Endpoints
+
+POST /admin/upload-timetable → Upload timetable PDF → Extract & store in DB.
+
+GET /student/free-classrooms?day=Mon&start=10:00&end=11:00 → Return list of free rooms.
+
+Free Classroom Logic
+
+def get_free_classrooms(day, start_time, end_time):
+    all_rooms = get_all_classrooms()
+    occupied = db.query("""
+        SELECT room_id FROM timetable
+        WHERE day_of_week = %s 
+        AND (start_time < %s AND end_time > %s)
+    """, (day, end_time, start_time))
+    
+    free_rooms = set(all_rooms) - set([r['room_id'] for r in occupied])
+    return free_rooms
+
+
+Role-based access:
+
+Only admin can upload timetables.
+
+Only students can query free classrooms.
+
+🔹 Frontend (React + Tailwind)
+Student Dashboard
+
+Free Classroom Search Form
+
+Select Day (dropdown)
+
+Select Time Slot (start & end)
+
+Submit button
+
+Results Table
+
+<table className="w-full border mt-4">
+  <thead className="bg-gray-200">
+    <tr>
+      <th className="p-2 border">Room</th>
+      <th className="p-2 border">Free From</th>
+      <th className="p-2 border">Free Until</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td className="p-2 border">C102</td>
+      <td className="p-2 border">10:00</td>
+      <td className="p-2 border">12:00</td>
+    </tr>
+  </tbody>
+</table>
+
+🔹 Deliverables
+
+Database schema & migration script.
+
+Backend APIs (Node.js/Express or Django/Flask).
+
+Frontend components (React + Tailwind).
+
+Timetable PDF parser code (Python/Node).
+
+Integration guide for plugging into student dashboard.
+
+Sample test cases (Postman or Jest).
+
+⚡ Your job as AI Agent:
+
+Build the complete Free Classroom Utilization feature as per above requirements.
+
+Output working, production-ready code with explanations.
