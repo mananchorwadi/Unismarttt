@@ -40,6 +40,26 @@ export class DatabaseStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     return memoryStorage.createUser(insertUser);
   }
+
+  async getFacultyList(): Promise<User[]> {
+    return memoryStorage.getFacultyList();
+  }
+
+  async createCallbackRequest(request: CreateCallbackRequest & { studentId: number }): Promise<CallbackRequest> {
+    return memoryStorage.createCallbackRequest(request);
+  }
+
+  async getStudentRequests(studentId: number): Promise<(CallbackRequest & { facultyName: string })[]> {
+    return memoryStorage.getStudentRequests(studentId);
+  }
+
+  async getFacultyRequests(facultyId: number): Promise<(CallbackRequest & { studentName: string; studentUniversityId: string })[]> {
+    return memoryStorage.getFacultyRequests(facultyId);
+  }
+
+  async updateRequestStatus(requestId: number, status: string): Promise<CallbackRequest | undefined> {
+    return memoryStorage.updateRequestStatus(requestId, status);
+  }
 }
 
 // Create storage instance

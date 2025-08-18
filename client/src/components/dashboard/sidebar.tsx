@@ -12,12 +12,14 @@ import {
   MessageSquare,
   Settings,
   Users,
+  Phone,
 } from "lucide-react";
 
 const facultyNavItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/" },
   { icon: BookOpen, label: "Classes", href: "/classes" },
   { icon: Users, label: "Students", href: "/students" },
+  { icon: Phone, label: "Requests to Me", href: "/faculty-requests" },
   { icon: FileText, label: "Assignments", href: "/assignments" },
   { icon: Calendar, label: "Schedule", href: "/schedule" },
   { icon: GraduationCap, label: "Attendance", href: "/attendance" },
@@ -29,6 +31,7 @@ const studentNavItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/" },
   { icon: BookOpen, label: "Courses", href: "/courses" },
   { icon: GraduationCap, label: "Grades", href: "/grades" },
+  { icon: Phone, label: "Request Callback", href: "/request-callback" },
   { icon: Calendar, label: "Schedule", href: "/schedule" },
   { icon: FileText, label: "Assignments", href: "/assignments" },
   { icon: MessageSquare, label: "Messages", href: "/messages" },

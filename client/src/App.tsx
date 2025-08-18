@@ -14,6 +14,8 @@ import GradesPage from "@/pages/grades-page";
 import ClassesPage from "@/pages/classes-page";
 import StudentsPage from "@/pages/students-page";
 import AttendancePage from "@/pages/attendance-page";
+import RequestCallbackPage from "@/pages/request-callback-page";
+import FacultyRequestsPage from "@/pages/faculty-requests-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
 import { ThemeProvider } from "./components/theme-provider";
@@ -38,6 +40,10 @@ function Router() {
       <ProtectedRoute path="/classes" component={ClassesPage} />
       <ProtectedRoute path="/students" component={StudentsPage} />
       <ProtectedRoute path="/attendance" component={AttendancePage} />
+      
+      {/* Callback System Routes */}
+      <ProtectedRoute path="/request-callback" component={RequestCallbackPage} />
+      <ProtectedRoute path="/faculty-requests" component={FacultyRequestsPage} />
       
       <Route component={NotFound} />
     </Switch>

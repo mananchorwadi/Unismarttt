@@ -62,8 +62,36 @@ export const forgotPasswordSchema = z.object({
   email: z.string().email("Please provide a valid email address")
 });
 
+// Callback Requests Table
+export const callbackRequests = pgTable("callback_requests", {
+  id: serial("id").primaryKey(),
+  studentId: serial("student_id").references(() => users.id),
+  facultyId: serial("faculty_id").references(() => users.id),
+  subject: text("subject").notNull(),
+  preferredTime: timestamp("preferred_time").notNull(),
+  status: text("status", { enum: ['Pending', 'Accepted', 'Rejected', 'Completed'] }).default('Pending').notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Callback request schemas
+export const createCallbackRequestSchema = z.object({
+  facultyId: z.number().min(1, "Faculty must be selected"),
+  subject: z.string().min(3, "Subject must be at least 3 characters"),
+  preferredTime: z.string().refine(
+    (date) => new Date(date) > new Date(),
+    "Preferred time must be in the future"
+  ),
+});
+
+export const updateCallbackRequestSchema = z.object({
+  status: z.enum(['Pending', 'Accepted', 'Rejected', 'Completed']),
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type RegisterUser = z.infer<typeof registerUserSchema>;
 export type LoginUser = z.infer<typeof loginSchema>;
 export type ForgotPassword = z.infer<typeof forgotPasswordSchema>;
 export type User = typeof users.$inferSelect;
+export type CallbackRequest = typeof callbackRequests.$inferSelect;
+export type CreateCallbackRequest = z.infer<typeof createCallbackRequestSchema>;
+export type UpdateCallbackRequest = z.infer<typeof updateCallbackRequestSchema>;
