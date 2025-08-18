@@ -5,20 +5,30 @@ import { users } from "@shared/schema";
 async function initializeDatabase() {
   console.log("Initializing database...");
   
+  // Skip database initialization if no DATABASE_URL or if it's likely to fail
+  if (!process.env.DATABASE_URL) {
+    console.log("No DATABASE_URL found, skipping database initialization");
+    return false;
+  }
+  
   try {
-    if (!process.env.DATABASE_URL) {
-      throw new Error("DATABASE_URL environment variable is not set");
-    }
-
     const client = postgres(process.env.DATABASE_URL as string, {
       max: 1,
       prepare: false,
       idle_timeout: 20,
-      connect_timeout: 10,
+      connect_timeout: 5,
     });
     
-    // Test connection first
-    await client`SELECT 1`;
+    // Test connection with timeout
+    const testConnection = new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error("Connection timeout")), 3000);
+      client`SELECT 1`.then(() => {
+        clearTimeout(timeout);
+        resolve(true);
+      }).catch(reject);
+    });
+    
+    await testConnection;
     console.log("Database connection established");
     
     // Create table if not exists
@@ -37,13 +47,11 @@ async function initializeDatabase() {
     
     console.log("Database tables created successfully");
     await client.end();
+    return true;
   } catch (error) {
-    console.warn("Database initialization failed, but continuing with application startup:", error);
-    // Don't exit process, just log warning and continue
+    console.log("Database unavailable, using memory storage instead");
     return false;
   }
-  
-  return true;
 }
 
 // Run if called directly

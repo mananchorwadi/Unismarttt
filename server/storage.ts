@@ -9,23 +9,31 @@ import { memoryStorage, type IStorage } from "./memory-storage";
 let client: any = null;
 let db: any = null;
 
-try {
-  if (process.env.DATABASE_URL) {
-    // Create postgres client with connection pooling and error handling
+// Only initialize PostgreSQL if we have a valid connection
+if (process.env.DATABASE_URL) {
+  try {
+    // Create postgres client with conservative settings
     client = postgres(process.env.DATABASE_URL as string, {
-      max: 10, // Maximum number of connections
-      idle_timeout: 20, // Close idle connections after 20 seconds
-      connect_timeout: 10, // Connection timeout of 10 seconds
-      prepare: false, // Disable prepared statements for better compatibility
-      onnotice: () => {}, // Suppress NOTICE messages
+      max: 5, // Reduced connection pool
+      idle_timeout: 30,
+      connect_timeout: 5,
+      prepare: false,
+      onnotice: () => {},
+      transform: {
+        undefined: null
+      }
     });
 
     // Initialize drizzle with the PostgreSQL client
     db = drizzle(client);
     console.log("PostgreSQL client initialized");
+  } catch (error) {
+    console.log("PostgreSQL client setup failed, using memory storage");
+    client = null;
+    db = null;
   }
-} catch (error) {
-  console.warn("PostgreSQL initialization failed, will use memory storage:", error);
+} else {
+  console.log("No DATABASE_URL provided, using memory storage");
 }
 
 export class DatabaseStorage implements IStorage {

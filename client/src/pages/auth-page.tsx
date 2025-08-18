@@ -153,34 +153,10 @@ export default function AuthPage() {
       {/* Footer */}
       <footer className="bg-white dark:bg-gray-900 border-t dark:border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col items-center sm:flex-row sm:justify-between">
-            <div className="flex items-center">
-              <span className="text-sm text-gray-500 dark:text-gray-400">© 2023 University Management System</span>
-            </div>
-            <div className="mt-4 sm:mt-0">
-              <ul className="flex space-x-4">
-                <li>
-                  <a href="#" className="text-sm text-gray-500 dark:text-gray-400 hover:text-primary dark:hover:text-primary">
-                    About
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="text-sm text-gray-500 dark:text-gray-400 hover:text-primary dark:hover:text-primary">
-                    Privacy
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="text-sm text-gray-500 dark:text-gray-400 hover:text-primary dark:hover:text-primary">
-                    Terms
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="text-sm text-gray-500 dark:text-gray-400 hover:text-primary dark:hover:text-primary">
-                    Contact
-                  </a>
-                </li>
-              </ul>
-            </div>
+          <div className="flex flex-col items-center">
+            <span className="text-sm text-gray-500 dark:text-gray-400 text-center">
+              © 2025 University Management System
+            </span>
           </div>
         </div>
       </footer>

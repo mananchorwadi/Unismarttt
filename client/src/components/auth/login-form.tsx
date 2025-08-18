@@ -53,6 +53,9 @@ export default function LoginForm({ activeRole, onRoleChange }: LoginFormProps) 
   const handleRoleTabClick = (role: "student" | "faculty") => {
     onRoleChange(role);
     form.setValue("role", role);
+    // Clear university ID when switching roles to avoid validation errors
+    form.setValue("universityId", "");
+    form.clearErrors();
   };
   
   // Handle form submission
