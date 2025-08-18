@@ -24,10 +24,11 @@ export default function FacultyRequestsPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch faculty's requests
-  const { data: requests = [], isLoading: requestsLoading } = useQuery({
+  // Fetch faculty's requests with proper typing
+  const { data: requests, isLoading: requestsLoading } = useQuery<FacultyRequest[]>({
     queryKey: ["/api/faculty/requests"],
     enabled: user?.role === "faculty",
+    select: (data: any) => data || [],
   });
 
   // Update request status mutation
@@ -80,6 +81,7 @@ export default function FacultyRequestsPage() {
   };
 
   const getStatusCounts = () => {
+    if (!requests) return {};
     return requests.reduce((acc: any, req: FacultyRequest) => {
       acc[req.status] = (acc[req.status] || 0) + 1;
       return acc;
@@ -141,7 +143,7 @@ export default function FacultyRequestsPage() {
             <User className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{requests.length}</div>
+            <div className="text-2xl font-bold">{requests?.length || 0}</div>
           </CardContent>
         </Card>
       </div>
@@ -160,7 +162,7 @@ export default function FacultyRequestsPage() {
               <Loader2 className="h-6 w-6 animate-spin" />
               <span className="ml-2">Loading requests...</span>
             </div>
-          ) : requests.length === 0 ? (
+          ) : !requests || requests.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>No requests yet. Students haven't sent any callback requests.</p>

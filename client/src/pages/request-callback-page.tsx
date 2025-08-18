@@ -40,15 +40,17 @@ export default function RequestCallbackPage() {
     preferredTime: "",
   });
 
-  // Fetch faculty list
-  const { data: facultyList = [], isLoading: facultyLoading } = useQuery<Faculty[]>({
+  // Fetch faculty list with proper typing
+  const { data: facultyList, isLoading: facultyLoading } = useQuery<Faculty[]>({
     queryKey: ["/api/faculty"],
+    select: (data: any) => data || [],
   });
 
-  // Fetch student's requests
-  const { data: requests = [], isLoading: requestsLoading } = useQuery<CallbackRequest[]>({
+  // Fetch student's requests with proper typing
+  const { data: requests, isLoading: requestsLoading } = useQuery<CallbackRequest[]>({
     queryKey: ["/api/student/requests"],
     enabled: user?.role === "student",
+    select: (data: any) => data || [],
   });
 
   // Create request mutation
@@ -144,20 +146,26 @@ export default function RequestCallbackPage() {
               <div className="space-y-2">
                 <Label htmlFor="faculty">Select Faculty</Label>
                 <Select
-                  value={formData.facultyId}
-                  onValueChange={(value) => setFormData({ ...formData, facultyId: value })}
+                  value={formData.facultyId || undefined}
+                  onValueChange={(value) => setFormData({ ...formData, facultyId: value || "" })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Choose a faculty member" />
                   </SelectTrigger>
                   <SelectContent>
                     {facultyLoading ? (
-                      <SelectItem value="" disabled>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Loading faculty...
+                      <SelectItem value="loading" disabled>
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>Loading faculty...</span>
+                        </div>
+                      </SelectItem>
+                    ) : !facultyList || facultyList.length === 0 ? (
+                      <SelectItem value="no-faculty" disabled>
+                        <span>No faculty members available</span>
                       </SelectItem>
                     ) : (
-                      (facultyList as Faculty[]).map((faculty: Faculty) => (
+                      facultyList.map((faculty: Faculty) => (
                         <SelectItem key={faculty.id} value={faculty.id.toString()}>
                           <div className="flex items-center gap-2">
                             <User className="h-4 w-4" />
@@ -227,14 +235,14 @@ export default function RequestCallbackPage() {
                 <Loader2 className="h-6 w-6 animate-spin" />
                 <span className="ml-2">Loading requests...</span>
               </div>
-            ) : requests.length === 0 ? (
+            ) : !requests || requests.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>No requests yet. Create your first callback request!</p>
               </div>
             ) : (
               <div className="space-y-4">
-                {(requests as CallbackRequest[]).map((request: CallbackRequest) => (
+                {requests.map((request: CallbackRequest) => (
                   <div key={request.id} className="border rounded-lg p-4 space-y-3">
                     <div className="flex items-start justify-between">
                       <div>

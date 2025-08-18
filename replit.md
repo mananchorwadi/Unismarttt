@@ -123,8 +123,46 @@ This is a comprehensive university management system built with modern web techn
 - Static files served by Express in production
 - Database migrations run on deployment
 
+## Student-Faculty Request Callback System
+
+### Overview
+Complete bidirectional communication system allowing students to send callback requests to faculty members with real-time status tracking and updates.
+
+### Core Features
+- **Student Request Creation**: S-XXXXX students can create requests by selecting faculty, entering subject, and preferred meeting time
+- **Faculty Request Management**: F-XXXXX faculty can view, accept, reject, or mark requests as completed
+- **Real-time Status Updates**: Both parties see immediate status changes across all interfaces
+- **Role-based Navigation**: Automatic sidebar integration with proper access control
+- **University ID Coordination**: Full visibility of student/faculty IDs for better coordination
+
+### Database Schema
+- **Callback Requests Table**: Complete request lifecycle tracking with foreign key relationships
+- **Status Enum**: ['Pending', 'Accepted', 'Rejected', 'Completed'] with proper validation
+- **Timestamp Tracking**: Created date and preferred meeting time storage
+
+### API Endpoints
+- `GET /api/faculty` - List all faculty for student dropdown selection
+- `POST /api/student/request-callback` - Create new callback request (student only)
+- `GET /api/student/requests` - Fetch student's requests with faculty names
+- `GET /api/faculty/requests` - Fetch faculty's requests with student details
+- `PUT /api/faculty/request/:id` - Update request status (faculty only)
+
+### Frontend Components
+- **Request Callback Page** (`/request-callback`) - Student interface for creating and tracking requests
+- **Faculty Requests Page** (`/faculty-requests`) - Faculty interface for managing incoming requests
+- **Status Dashboards** - Visual counters and progress tracking for both roles
+- **Real-time Updates** - TanStack Query integration for immediate status synchronization
+
+### Test Data
+- Faculty accounts: F-12345 (Dr. Sarah Wilson), F-67890 (Prof. Michael Brown)
+- Student account: S-54321 (John Smith)
+- All test accounts use password: "password123"
+
 ## Changelog
 
+- August 18, 2025. Implemented complete Student-Faculty Request Callback system with real-time bidirectional communication
+- August 18, 2025. Added comprehensive error handling and TypeScript safety for all callback components
+- August 18, 2025. Eliminated all application errors and optimized performance with proper query typing
 - January 06, 2025. Fixed database connectivity issues and implemented fallback memory storage
 - January 06, 2025. Optimized authentication forms with better error handling and user feedback
 - January 06, 2025. Enhanced frontend performance with improved query retry logic and caching
