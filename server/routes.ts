@@ -2,7 +2,15 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { createCallbackRequestSchema, updateCallbackRequestSchema } from "@shared/schema";
+import { 
+  createCallbackRequestSchema, 
+  updateCallbackRequestSchema,
+  createMessageSchema,
+  createConversationSchema,
+  createClassroomSchema,
+  createTimetableSchema,
+  getFreeClassroomsSchema
+} from "@shared/schema";
 import { ZodError } from "zod";
 import { formatZodError } from "./utils";
 
@@ -137,6 +145,197 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       console.error("Error updating request status:", error);
       res.status(500).json({ message: "Failed to update request" });
+    }
+  });
+
+  // MESSAGING API ROUTES
+
+  // Get user's conversations
+  app.get("/api/conversations", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const conversations = await storage.getUserConversations(req.user.id);
+      res.json(conversations);
+    } catch (error) {
+      console.error("Error fetching conversations:", error);
+      res.status(500).json({ message: "Failed to fetch conversations" });
+    }
+  });
+
+  // Create new conversation
+  app.post("/api/conversations", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const validatedData = createConversationSchema.parse(req.body);
+      const conversation = await storage.createConversation(validatedData, req.user.id);
+      res.status(201).json(conversation);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ message: formatZodError(error) });
+      }
+      console.error("Error creating conversation:", error);
+      res.status(500).json({ message: "Failed to create conversation" });
+    }
+  });
+
+  // Get conversation messages
+  app.get("/api/conversations/:id/messages", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const conversationId = parseInt(req.params.id);
+      if (isNaN(conversationId)) {
+        return res.status(400).json({ message: "Invalid conversation ID" });
+      }
+
+      const messages = await storage.getConversationMessages(conversationId, req.user.id);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
+  // Send message
+  app.post("/api/messages", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const validatedData = createMessageSchema.parse(req.body);
+      const message = await storage.createMessage(validatedData, req.user.id);
+      res.status(201).json(message);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ message: formatZodError(error) });
+      }
+      console.error("Error sending message:", error);
+      res.status(500).json({ message: "Failed to send message" });
+    }
+  });
+
+  // CLASSROOM UTILIZATION API ROUTES
+
+  // Get all classrooms
+  app.get("/api/classrooms", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const classrooms = await storage.getClassrooms();
+      res.json(classrooms);
+    } catch (error) {
+      console.error("Error fetching classrooms:", error);
+      res.status(500).json({ message: "Failed to fetch classrooms" });
+    }
+  });
+
+  // Create new classroom (admin/faculty only)
+  app.post("/api/classrooms", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    if (req.user.role !== 'faculty') {
+      return res.status(403).json({ message: "Only faculty can create classrooms" });
+    }
+
+    try {
+      const validatedData = createClassroomSchema.parse(req.body);
+      const classroom = await storage.createClassroom(validatedData);
+      res.status(201).json(classroom);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ message: formatZodError(error) });
+      }
+      console.error("Error creating classroom:", error);
+      res.status(500).json({ message: "Failed to create classroom" });
+    }
+  });
+
+  // Get timetable
+  app.get("/api/timetable", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const timetable = await storage.getTimetable();
+      res.json(timetable);
+    } catch (error) {
+      console.error("Error fetching timetable:", error);
+      res.status(500).json({ message: "Failed to fetch timetable" });
+    }
+  });
+
+  // Add timetable entry (faculty only)
+  app.post("/api/timetable", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    if (req.user.role !== 'faculty') {
+      return res.status(403).json({ message: "Only faculty can add timetable entries" });
+    }
+
+    try {
+      const validatedData = createTimetableSchema.parse(req.body);
+      const entry = await storage.createTimetableEntry(validatedData);
+      res.status(201).json(entry);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ message: formatZodError(error) });
+      }
+      console.error("Error creating timetable entry:", error);
+      res.status(500).json({ message: "Failed to create timetable entry" });
+    }
+  });
+
+  // Get free classrooms (student feature)
+  app.get("/api/free-classrooms", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    if (req.user.role !== 'student') {
+      return res.status(403).json({ message: "Only students can check free classrooms" });
+    }
+
+    try {
+      const { day, startTime, endTime } = req.query;
+      
+      // If no day specified, use current day
+      const currentDay = day as string || new Date().toLocaleDateString('en-US', { weekday: 'long' });
+      
+      const validatedData = getFreeClassroomsSchema.parse({
+        day: currentDay,
+        startTime,
+        endTime
+      });
+      
+      const freeClassrooms = await storage.getFreeClassrooms(
+        validatedData.day || currentDay,
+        validatedData.startTime,
+        validatedData.endTime
+      );
+      
+      res.json(freeClassrooms);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ message: formatZodError(error) });
+      }
+      console.error("Error fetching free classrooms:", error);
+      res.status(500).json({ message: "Failed to fetch free classrooms" });
     }
   });
   

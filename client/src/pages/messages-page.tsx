@@ -10,6 +10,10 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getInitials } from "@/lib/utils";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Search, Plus, Send, Paperclip, Phone, Video, MoreHorizontal, 
   Users, Star, Archive, Flag, Trash, Info, FilePlus, Image
@@ -44,24 +48,66 @@ export default function MessagesPage() {
   
   const isFaculty = user.role === ROLES.FACULTY;
   
-  // Mock conversations data
-  const conversations = [
-    {
-      id: "conv1",
-      name: isFaculty ? "Alex Johnson" : "Dr. Michael Reynolds",
-      avatar: getInitials(isFaculty ? "Alex Johnson" : "Dr. Michael Reynolds"),
-      role: isFaculty ? "Student" : "Professor",
-      lastMessage: "When is the next assignment due?",
-      timestamp: "10:30 AM",
-      unread: 2,
-      online: true,
-      course: "CS 101: Introduction to Computer Science",
-      email: isFaculty ? "alex.j@university.edu" : "m.reynolds@university.edu",
-      starred: true
+  // React Query hooks for real data
+  const { toast } = useToast();
+  
+  // Fetch user's conversations
+  const { data: conversations = [], isLoading: conversationsLoading } = useQuery({
+    queryKey: ['/api/conversations'],
+    queryFn: async () => {
+      const response = await fetch('/api/conversations', {
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch conversations');
+      }
+      return response.json();
     },
-    {
-      id: "conv2",
-      name: isFaculty ? "Maria Garcia" : "Dr. Sarah Connor",
+  });
+  
+  // Fetch messages for selected conversation
+  const { data: conversationMessages = [], isLoading: messagesLoading } = useQuery({
+    queryKey: ['/api/conversations', currentConversation, 'messages'],
+    enabled: !!currentConversation,
+    queryFn: async () => {
+      const response = await fetch(`/api/conversations/${currentConversation}/messages`, {
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch messages');
+      }
+      return response.json();
+    },
+  });
+  
+  // Send message mutation
+  const sendMessageMutation = useMutation({
+    mutationFn: async (messageData: { conversationId: number; content: string }) => {
+      return apiRequest(`/api/messages`, {
+        method: 'POST',
+        body: JSON.stringify(messageData),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/conversations'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/conversations', currentConversation, 'messages'] });
+      setMessage("");
+      toast({
+        title: "Message sent",
+        description: "Your message has been sent successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send message",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Use real conversations or fallback to empty array
+  const displayConversations = conversations.length > 0 ? conversations : [];
       avatar: getInitials(isFaculty ? "Maria Garcia" : "Dr. Sarah Connor"),
       role: isFaculty ? "Student" : "Professor",
       lastMessage: "Thank you for the feedback on my project.",

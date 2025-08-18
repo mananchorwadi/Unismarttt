@@ -13,6 +13,7 @@ import {
   Settings,
   Users,
   Phone,
+  MapPin,
 } from "lucide-react";
 
 const facultyNavItems = [
@@ -35,6 +36,7 @@ const studentNavItems = [
   { icon: Calendar, label: "Schedule", href: "/schedule" },
   { icon: FileText, label: "Assignments", href: "/assignments" },
   { icon: MessageSquare, label: "Messages", href: "/messages" },
+  { icon: MapPin, label: "Free Classrooms", href: "/classroom-utilization" },
   { icon: Settings, label: "Settings", href: "/settings" },
 ];
 

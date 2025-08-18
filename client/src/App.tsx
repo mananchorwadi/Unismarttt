@@ -7,7 +7,7 @@ import HomePage from "@/pages/home-page";
 import AuthPage from "@/pages/auth-page";
 import SchedulePage from "@/pages/schedule-page";
 import AssignmentsPage from "@/pages/assignments-page";
-import MessagesPage from "@/pages/messages-page";
+import MessagesPage from "@/pages/messages-page-new";
 import SettingsPage from "@/pages/settings-page";
 import CoursesPage from "@/pages/courses-page";
 import GradesPage from "@/pages/grades-page";
@@ -16,6 +16,7 @@ import StudentsPage from "@/pages/students-page";
 import AttendancePage from "@/pages/attendance-page";
 import RequestCallbackPage from "@/pages/request-callback-page";
 import FacultyRequestsPage from "@/pages/faculty-requests-page";
+import ClassroomUtilizationPage from "@/pages/classroom-utilization-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
 import { ThemeProvider } from "./components/theme-provider";
@@ -35,6 +36,7 @@ function Router() {
       {/* Student Routes */}
       <ProtectedRoute path="/courses" component={CoursesPage} />
       <ProtectedRoute path="/grades" component={GradesPage} />
+      <ProtectedRoute path="/classroom-utilization" component={ClassroomUtilizationPage} />
       
       {/* Faculty Routes */}
       <ProtectedRoute path="/classes" component={ClassesPage} />

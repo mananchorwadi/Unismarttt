@@ -1,4 +1,18 @@
-import { users, type User, type InsertUser } from "@shared/schema";
+import { 
+  users, 
+  type User, 
+  type InsertUser, 
+  type CallbackRequest, 
+  type CreateCallbackRequest,
+  type Conversation,
+  type Message,
+  type CreateMessage,
+  type CreateConversation,
+  type Classroom,
+  type TimetableEntry,
+  type CreateClassroom,
+  type CreateTimetableEntry
+} from "@shared/schema";
 import session from "express-session";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
@@ -59,6 +73,44 @@ export class DatabaseStorage implements IStorage {
 
   async updateRequestStatus(requestId: number, status: string): Promise<CallbackRequest | undefined> {
     return memoryStorage.updateRequestStatus(requestId, status);
+  }
+
+  // Messaging functionality
+  async createConversation(conversation: CreateConversation, creatorId: number): Promise<Conversation> {
+    return memoryStorage.createConversation(conversation, creatorId);
+  }
+
+  async getUserConversations(userId: number): Promise<Array<Conversation & { lastMessage?: Message; unreadCount: number; members: User[] }>> {
+    return memoryStorage.getUserConversations(userId);
+  }
+
+  async createMessage(message: CreateMessage, senderId: number): Promise<Message> {
+    return memoryStorage.createMessage(message, senderId);
+  }
+
+  async getConversationMessages(conversationId: number, userId: number): Promise<Array<Message & { senderName: string; senderAvatar: string }>> {
+    return memoryStorage.getConversationMessages(conversationId, userId);
+  }
+
+  // Classroom functionality  
+  async createClassroom(classroom: CreateClassroom): Promise<Classroom> {
+    return memoryStorage.createClassroom(classroom);
+  }
+
+  async getClassrooms(): Promise<Classroom[]> {
+    return memoryStorage.getClassrooms();
+  }
+
+  async createTimetableEntry(entry: CreateTimetableEntry): Promise<TimetableEntry> {
+    return memoryStorage.createTimetableEntry(entry);
+  }
+
+  async getTimetable(): Promise<Array<TimetableEntry & { roomNo: string }>> {
+    return memoryStorage.getTimetable();
+  }
+
+  async getFreeClassrooms(day: string, startTime: string, endTime: string): Promise<Array<Classroom & { freeUntil?: string }>> {
+    return memoryStorage.getFreeClassrooms(day, startTime, endTime);
   }
 }
 
