@@ -40,15 +40,6 @@ app.use((req, res, next) => {
 
 (async () => {
   try {
-    // Initialize database tables (non-blocking, silent)
-    initializeDatabase().catch(() => {});
-    
-    // Run health check
-    const { healthCheck } = await import("./health-check");
-    healthCheck().then(() => {
-      console.log("System health check completed");
-    });
-    
     const server = await registerRoutes(app);
 
     // Enhanced error handling middleware
@@ -69,6 +60,7 @@ app.use((req, res, next) => {
     const port = 5000;
     server.listen(port, "0.0.0.0", () => {
       log(`serving on port ${port}`);
+      console.log(`✓ University Management System ready at http://localhost:${port}`);
     });
   } catch (error) {
     console.error("Fatal server startup error:", error);
