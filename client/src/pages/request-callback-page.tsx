@@ -41,12 +41,12 @@ export default function RequestCallbackPage() {
   });
 
   // Fetch faculty list
-  const { data: facultyList = [], isLoading: facultyLoading } = useQuery({
+  const { data: facultyList = [], isLoading: facultyLoading } = useQuery<Faculty[]>({
     queryKey: ["/api/faculty"],
   });
 
   // Fetch student's requests
-  const { data: requests = [], isLoading: requestsLoading } = useQuery({
+  const { data: requests = [], isLoading: requestsLoading } = useQuery<CallbackRequest[]>({
     queryKey: ["/api/student/requests"],
     enabled: user?.role === "student",
   });
@@ -157,7 +157,7 @@ export default function RequestCallbackPage() {
                         Loading faculty...
                       </SelectItem>
                     ) : (
-                      facultyList.map((faculty: Faculty) => (
+                      (facultyList as Faculty[]).map((faculty: Faculty) => (
                         <SelectItem key={faculty.id} value={faculty.id.toString()}>
                           <div className="flex items-center gap-2">
                             <User className="h-4 w-4" />
@@ -234,7 +234,7 @@ export default function RequestCallbackPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {requests.map((request: CallbackRequest) => (
+                {(requests as CallbackRequest[]).map((request: CallbackRequest) => (
                   <div key={request.id} className="border rounded-lg p-4 space-y-3">
                     <div className="flex items-start justify-between">
                       <div>
