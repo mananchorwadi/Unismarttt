@@ -18,6 +18,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
   setupAuth(app);
   
+  // Get user profile (legacy endpoint for frontend compatibility)
+  app.get("/api/user", (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    // Remove password from response
+    const { password, ...userWithoutPassword } = req.user;
+    
+    res.json(userWithoutPassword);
+  });
+
   // Get user profile
   app.get("/api/profile", (req, res) => {
     if (!req.isAuthenticated()) {

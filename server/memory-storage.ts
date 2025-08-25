@@ -281,8 +281,10 @@ export class MemoryStorage implements IStorage {
     };
     conversations.push(newConversation);
 
-    // Add members to conversation
-    conversation.members.forEach(userId => {
+    // Add creator to conversation members
+    const allMembers = Array.from(new Set([creatorId, ...conversation.members])); // Ensure creator is included and no duplicates
+    
+    allMembers.forEach(userId => {
       conversationMembers.push({
         id: conversationMembers.length + 1,
         conversationId: newConversation.id,

@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -65,8 +65,8 @@ export const forgotPasswordSchema = z.object({
 // Callback Requests Table
 export const callbackRequests = pgTable("callback_requests", {
   id: serial("id").primaryKey(),
-  studentId: serial("student_id").references(() => users.id),
-  facultyId: serial("faculty_id").references(() => users.id),
+  studentId: integer("student_id").references(() => users.id),
+  facultyId: integer("faculty_id").references(() => users.id),
   subject: text("subject").notNull(),
   preferredTime: timestamp("preferred_time").notNull(),
   status: text("status", { enum: ['Pending', 'Accepted', 'Rejected', 'Completed'] }).default('Pending').notNull(),
@@ -84,15 +84,15 @@ export const conversations = pgTable("conversations", {
 
 export const conversationMembers = pgTable("conversation_members", {
   id: serial("id").primaryKey(),
-  conversationId: serial("conversation_id").references(() => conversations.id),
-  userId: serial("user_id").references(() => users.id),
+  conversationId: integer("conversation_id").references(() => conversations.id),
+  userId: integer("user_id").references(() => users.id),
   joinedAt: timestamp("joined_at").defaultNow().notNull(),
 });
 
 export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
-  conversationId: serial("conversation_id").references(() => conversations.id),
-  senderId: serial("sender_id").references(() => users.id),
+  conversationId: integer("conversation_id").references(() => conversations.id),
+  senderId: integer("sender_id").references(() => users.id),
   content: text("content").notNull(),
   attachmentName: text("attachment_name"),
   attachmentSize: text("attachment_size"),
@@ -104,13 +104,13 @@ export const classrooms = pgTable("classrooms", {
   id: serial("id").primaryKey(),
   roomNo: text("room_no").notNull().unique(),
   building: text("building"),
-  capacity: serial("capacity").default(0),
+  capacity: integer("capacity").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const timetable = pgTable("timetable", {
   id: serial("id").primaryKey(),
-  roomId: serial("room_id").references(() => classrooms.id),
+  roomId: integer("room_id").references(() => classrooms.id),
   courseName: text("course_name").notNull(),
   facultyName: text("faculty_name").notNull(),
   dayOfWeek: text("day_of_week", { enum: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] }).notNull(),
