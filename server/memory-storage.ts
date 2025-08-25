@@ -229,6 +229,84 @@ async function initializeTestData() {
       { id: memberIdCounter++, conversationId: studyGroup.id, userId: student4.id, joinedAt: new Date() }
     );
 
+    // Conversation 6: Student1 (John) and Faculty2 (Prof. Michael Brown)
+    const conv6: Conversation = {
+      id: nextConversationId++,
+      name: null,
+      isGroup: false,
+      createdAt: new Date(now.getTime() - 518400000), // 6 days ago
+      updatedAt: new Date(now.getTime() - 7200000) // 2 hours ago
+    };
+    conversations.push(conv6);
+    
+    conversationMembers.push(
+      { id: memberIdCounter++, conversationId: conv6.id, userId: student1.id, joinedAt: new Date() },
+      { id: memberIdCounter++, conversationId: conv6.id, userId: faculty2.id, joinedAt: new Date() }
+    );
+
+    // Conversation 7: Student2 (Alex) and Faculty3 (Dr. Emily Johnson) 
+    const conv7: Conversation = {
+      id: nextConversationId++,
+      name: null,
+      isGroup: false,
+      createdAt: new Date(now.getTime() - 1209600000), // 2 weeks ago
+      updatedAt: new Date(now.getTime() - 900000) // 15 minutes ago
+    };
+    conversations.push(conv7);
+    
+    conversationMembers.push(
+      { id: memberIdCounter++, conversationId: conv7.id, userId: student2.id, joinedAt: new Date() },
+      { id: memberIdCounter++, conversationId: conv7.id, userId: faculty3.id, joinedAt: new Date() }
+    );
+
+    // Conversation 8: CS 205 Advanced Group
+    const advancedGroup: Conversation = {
+      id: nextConversationId++,
+      name: "CS 205 Advanced Group", 
+      isGroup: true,
+      createdAt: new Date(now.getTime() - 1036800000), // 12 days ago
+      updatedAt: new Date(now.getTime() - 43200000) // 12 hours ago
+    };
+    conversations.push(advancedGroup);
+    
+    conversationMembers.push(
+      { id: memberIdCounter++, conversationId: advancedGroup.id, userId: student3.id, joinedAt: new Date() },
+      { id: memberIdCounter++, conversationId: advancedGroup.id, userId: student4.id, joinedAt: new Date() },
+      { id: memberIdCounter++, conversationId: advancedGroup.id, userId: student5.id, joinedAt: new Date() },
+      { id: memberIdCounter++, conversationId: advancedGroup.id, userId: faculty2.id, joinedAt: new Date() }
+    );
+
+    // Conversation 9: Student5 (Sarah) and Faculty1 (Dr. Sarah Wilson)
+    const conv9: Conversation = {
+      id: nextConversationId++,
+      name: null,
+      isGroup: false,
+      createdAt: new Date(now.getTime() - 777600000), // 9 days ago
+      updatedAt: new Date(now.getTime() - 21600000) // 6 hours ago
+    };
+    conversations.push(conv9);
+    
+    conversationMembers.push(
+      { id: memberIdCounter++, conversationId: conv9.id, userId: student5.id, joinedAt: new Date() },
+      { id: memberIdCounter++, conversationId: conv9.id, userId: faculty1.id, joinedAt: new Date() }
+    );
+
+    // Conversation 10: Math Study Group
+    const mathGroup: Conversation = {
+      id: nextConversationId++,
+      name: "Math Study Group",
+      isGroup: true,
+      createdAt: new Date(now.getTime() - 864000000), // 10 days ago
+      updatedAt: new Date(now.getTime() - 3600000) // 1 hour ago
+    };
+    conversations.push(mathGroup);
+    
+    conversationMembers.push(
+      { id: memberIdCounter++, conversationId: mathGroup.id, userId: student1.id, joinedAt: new Date() },
+      { id: memberIdCounter++, conversationId: mathGroup.id, userId: student4.id, joinedAt: new Date() },
+      { id: memberIdCounter++, conversationId: mathGroup.id, userId: student5.id, joinedAt: new Date() }
+    );
+
     const sampleMessages: Message[] = [
       // Messages for Conversation 1 (Alex & Dr. Sarah Wilson)
       {
@@ -319,6 +397,106 @@ async function initializeTestData() {
         attachmentName: null,
         attachmentSize: null,
         createdAt: new Date(now.getTime() - 172800000) // 2 days ago
+      },
+
+      // Messages for Conversation 6 (John & Prof. Michael Brown)
+      {
+        id: nextMessageId++,
+        conversationId: conv6.id,
+        senderId: student1.id,
+        content: "Professor, I'm struggling with the data structures assignment. Could we schedule a meeting?",
+        attachmentName: null,
+        attachmentSize: null,
+        createdAt: new Date(now.getTime() - 86400000) // 1 day ago
+      },
+      {
+        id: nextMessageId++,
+        conversationId: conv6.id,
+        senderId: faculty2.id,
+        content: "Of course! How about tomorrow at 2 PM in my office?",
+        attachmentName: null,
+        attachmentSize: null,
+        createdAt: new Date(now.getTime() - 7200000) // 2 hours ago
+      },
+
+      // Messages for Conversation 7 (Alex & Dr. Emily Johnson)
+      {
+        id: nextMessageId++,
+        conversationId: conv7.id,
+        senderId: faculty3.id,
+        content: "Alex, I've reviewed your midterm exam. Great work overall!",
+        attachmentName: null,
+        attachmentSize: null,
+        createdAt: new Date(now.getTime() - 1800000) // 30 minutes ago
+      },
+      {
+        id: nextMessageId++,
+        conversationId: conv7.id,
+        senderId: student2.id,
+        content: "Thank you! I was worried about question 3. Any areas I should focus on for the final?",
+        attachmentName: null,
+        attachmentSize: null,
+        createdAt: new Date(now.getTime() - 900000) // 15 minutes ago
+      },
+
+      // Messages for Advanced Group
+      {
+        id: nextMessageId++,
+        conversationId: advancedGroup.id,
+        senderId: faculty2.id,
+        content: "Don't forget about the algorithm optimization project due next week!",
+        attachmentName: null,
+        attachmentSize: null,
+        createdAt: new Date(now.getTime() - 86400000) // 1 day ago
+      },
+      {
+        id: nextMessageId++,
+        conversationId: advancedGroup.id,
+        senderId: student3.id,
+        content: "I've been working on the binary tree implementation. Almost done!",
+        attachmentName: null,
+        attachmentSize: null,
+        createdAt: new Date(now.getTime() - 43200000) // 12 hours ago
+      },
+
+      // Messages for Conversation 9 (Sarah & Dr. Sarah Wilson)
+      {
+        id: nextMessageId++,
+        conversationId: conv9.id,
+        senderId: student5.id,
+        content: "Hi Dr. Wilson! I have some questions about the research project proposal.",
+        attachmentName: null,
+        attachmentSize: null,
+        createdAt: new Date(now.getTime() - 172800000) // 2 days ago
+      },
+      {
+        id: nextMessageId++,
+        conversationId: conv9.id,
+        senderId: faculty1.id,
+        content: "I'd be happy to help! I've attached some reference papers that might be useful.",
+        attachmentName: "ResearchReferences.zip",
+        attachmentSize: "2.1 MB",
+        createdAt: new Date(now.getTime() - 21600000) // 6 hours ago
+      },
+
+      // Messages for Math Study Group
+      {
+        id: nextMessageId++,
+        conversationId: mathGroup.id,
+        senderId: student4.id,
+        content: "Anyone free to study for the calculus exam this weekend?",
+        attachmentName: null,
+        attachmentSize: null,
+        createdAt: new Date(now.getTime() - 7200000) // 2 hours ago
+      },
+      {
+        id: nextMessageId++,
+        conversationId: mathGroup.id,
+        senderId: student1.id,
+        content: "I'm in! Saturday afternoon works for me.",
+        attachmentName: null,
+        attachmentSize: null,
+        createdAt: new Date(now.getTime() - 3600000) // 1 hour ago
       },
     ];
     messages.push(...sampleMessages);
