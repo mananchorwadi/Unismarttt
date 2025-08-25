@@ -56,6 +56,9 @@ export default function AssignmentsPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const [viewAssignment, setViewAssignment] = useState<string | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [submissionComments, setSubmissionComments] = useState("");
+  const [agreementChecked, setAgreementChecked] = useState(false);
   
   if (!user) return <div className="hidden"></div>; // Return empty div instead of null
   
@@ -69,6 +72,37 @@ export default function AssignmentsPage() {
     { id: "eng101", name: "English Composition", code: "ENG 101" },
   ];
   
+  // File upload handlers
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    setSelectedFiles(prev => [...prev, ...files]);
+  };
+
+  const handleFileRemove = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSubmissionReset = () => {
+    setSelectedFiles([]);
+    setSubmissionComments("");
+    setAgreementChecked(false);
+    setShowSubmitDialog(false);
+  };
+
+  const handleSubmissionSubmit = () => {
+    if (selectedFiles.length === 0) {
+      alert("Please select at least one file to submit.");
+      return;
+    }
+    if (!agreementChecked) {
+      alert("Please confirm that this is your own work and you have followed the academic honesty policy.");
+      return;
+    }
+    // Handle submission logic here
+    alert("Assignment submitted successfully!");
+    handleSubmissionReset();
+  };
+
   // Mock assignments data
   const assignmentsData = [
     { 
@@ -609,34 +643,94 @@ export default function AssignmentsPage() {
                       id="comments" 
                       placeholder="Add any comments about your submission..."
                       rows={2}
+                      value={submissionComments}
+                      onChange={(e) => setSubmissionComments(e.target.value)}
                     />
                   </div>
                   
                   <div className="grid gap-2">
                     <Label htmlFor="files">Upload Files</Label>
-                    <div className="border rounded-lg p-2 flex items-center justify-center">
-                      <div className="text-center p-4">
-                        <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground mb-2">
-                          Drag and drop files here, or click to select files
-                        </p>
-                        <Button variant="outline" size="sm">
-                          <FileUp className="mr-2 h-4 w-4" />
-                          Upload Files
-                        </Button>
-                      </div>
+                    <div className="border rounded-lg p-4">
+                      {selectedFiles.length === 0 ? (
+                        <div className="text-center p-4">
+                          <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                          <p className="text-sm text-muted-foreground mb-2">
+                            Drag and drop files here, or click to select files
+                          </p>
+                          <input
+                            type="file"
+                            multiple
+                            onChange={handleFileSelect}
+                            className="hidden"
+                            id="file-upload"
+                            accept=".pdf,.doc,.docx,.txt,.zip"
+                          />
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => document.getElementById('file-upload')?.click()}
+                          >
+                            <FileUp className="mr-2 h-4 w-4" />
+                            Upload Files
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium">{selectedFiles.length} file(s) selected</span>
+                            <input
+                              type="file"
+                              multiple
+                              onChange={handleFileSelect}
+                              className="hidden"
+                              id="file-upload-additional"
+                              accept=".pdf,.doc,.docx,.txt,.zip"
+                            />
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => document.getElementById('file-upload-additional')?.click()}
+                            >
+                              <Plus className="mr-2 h-4 w-4" />
+                              Add More
+                            </Button>
+                          </div>
+                          {selectedFiles.map((file, index) => (
+                            <div key={index} className="flex items-center justify-between p-2 bg-muted rounded-md">
+                              <div className="flex items-center">
+                                <FileText className="h-4 w-4 mr-2 text-blue-500" />
+                                <span className="text-sm">{file.name}</span>
+                                <span className="text-xs text-muted-foreground ml-2">
+                                  ({(file.size / 1024).toFixed(1)} KB)
+                                </span>
+                              </div>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => handleFileRemove(index)}
+                              >
+                                <Trash className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                   
                   <div className="flex items-center space-x-2">
-                    <Checkbox id="confirm" />
+                    <Checkbox 
+                      id="confirm" 
+                      checked={agreementChecked}
+                      onCheckedChange={setAgreementChecked}
+                    />
                     <Label htmlFor="confirm">I confirm this is my own work and I have followed the academic honesty policy</Label>
                   </div>
                 </div>
                 
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setShowSubmitDialog(false)}>Cancel</Button>
-                  <Button onClick={() => setShowSubmitDialog(false)}>Submit Assignment</Button>
+                  <Button variant="outline" onClick={handleSubmissionReset}>Cancel</Button>
+                  <Button onClick={handleSubmissionSubmit}>Submit Assignment</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
