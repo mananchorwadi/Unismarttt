@@ -41,7 +41,7 @@ let nextTimetableId = 1;
 async function initializeTestData() {
   if (users.length === 0) {
     // Add test faculty
-    const testFaculty = {
+    const testFaculty1 = {
       universityId: "F-12345",
       fullName: "Dr. Sarah Wilson",
       email: "sarah.wilson@university.edu",
@@ -57,8 +57,24 @@ async function initializeTestData() {
       role: "faculty" as const,
     };
 
-    // Add test student
-    const testStudent = {
+    const testFaculty3 = {
+      universityId: "F-11111", 
+      fullName: "Dr. Emily Johnson",
+      email: "emily.johnson@university.edu",
+      password: await hashPassword("password123"),
+      role: "faculty" as const,
+    };
+
+    const testFaculty4 = {
+      universityId: "F-22222", 
+      fullName: "Prof. David Miller",
+      email: "david.miller@university.edu",
+      password: await hashPassword("password123"),
+      role: "faculty" as const,
+    };
+
+    // Add test students
+    const testStudent1 = {
       universityId: "S-54321",
       fullName: "John Smith",
       email: "john.smith@student.university.edu", 
@@ -66,12 +82,50 @@ async function initializeTestData() {
       role: "student" as const,
     };
 
-    // Create users
-    const faculty1: User = { ...testFaculty, id: nextUserId++, createdAt: new Date(), username: testFaculty.universityId };
-    const faculty2: User = { ...testFaculty2, id: nextUserId++, createdAt: new Date(), username: testFaculty2.universityId };
-    const student1: User = { ...testStudent, id: nextUserId++, createdAt: new Date(), username: testStudent.universityId };
+    const testStudent2 = {
+      universityId: "S-11111",
+      fullName: "Alex Johnson",
+      email: "alex.johnson@student.university.edu", 
+      password: await hashPassword("password123"),
+      role: "student" as const,
+    };
 
-    users.push(faculty1, faculty2, student1);
+    const testStudent3 = {
+      universityId: "S-22222",
+      fullName: "Maria Garcia",
+      email: "maria.garcia@student.university.edu", 
+      password: await hashPassword("password123"),
+      role: "student" as const,
+    };
+
+    const testStudent4 = {
+      universityId: "S-33333",
+      fullName: "James Wilson",
+      email: "james.wilson@student.university.edu", 
+      password: await hashPassword("password123"),
+      role: "student" as const,
+    };
+
+    const testStudent5 = {
+      universityId: "S-44444",
+      fullName: "Sarah Ahmed",
+      email: "sarah.ahmed@student.university.edu", 
+      password: await hashPassword("password123"),
+      role: "student" as const,
+    };
+
+    // Create users
+    const faculty1: User = { ...testFaculty1, id: nextUserId++, createdAt: new Date(), username: testFaculty1.universityId };
+    const faculty2: User = { ...testFaculty2, id: nextUserId++, createdAt: new Date(), username: testFaculty2.universityId };
+    const faculty3: User = { ...testFaculty3, id: nextUserId++, createdAt: new Date(), username: testFaculty3.universityId };
+    const faculty4: User = { ...testFaculty4, id: nextUserId++, createdAt: new Date(), username: testFaculty4.universityId };
+    const student1: User = { ...testStudent1, id: nextUserId++, createdAt: new Date(), username: testStudent1.universityId };
+    const student2: User = { ...testStudent2, id: nextUserId++, createdAt: new Date(), username: testStudent2.universityId };
+    const student3: User = { ...testStudent3, id: nextUserId++, createdAt: new Date(), username: testStudent3.universityId };
+    const student4: User = { ...testStudent4, id: nextUserId++, createdAt: new Date(), username: testStudent4.universityId };
+    const student5: User = { ...testStudent5, id: nextUserId++, createdAt: new Date(), username: testStudent5.universityId };
+
+    users.push(faculty1, faculty2, faculty3, faculty4, student1, student2, student3, student4, student5);
     
     // Initialize sample classrooms
     const sampleClassrooms: Classroom[] = [
@@ -95,45 +149,183 @@ async function initializeTestData() {
     timetable.push(...sampleTimetable);
 
     // Initialize sample conversations and messages
-    const studentFacultyConvo: Conversation = {
+    const now = new Date();
+    let memberIdCounter = 1;
+
+    // Conversation 1: Student2 (Alex) and Faculty1 (Dr. Sarah Wilson)
+    const conv1: Conversation = {
       id: nextConversationId++,
       name: null,
       isGroup: false,
-      createdAt: new Date(),
-      updatedAt: new Date()
+      createdAt: new Date(now.getTime() - 86400000), // 1 day ago
+      updatedAt: new Date(now.getTime() - 1800000) // 30 minutes ago
     };
-    conversations.push(studentFacultyConvo);
+    conversations.push(conv1);
     
     conversationMembers.push(
-      { id: 1, conversationId: studentFacultyConvo.id, userId: student1.id, joinedAt: new Date() },
-      { id: 2, conversationId: studentFacultyConvo.id, userId: faculty1.id, joinedAt: new Date() }
+      { id: memberIdCounter++, conversationId: conv1.id, userId: student2.id, joinedAt: new Date() },
+      { id: memberIdCounter++, conversationId: conv1.id, userId: faculty1.id, joinedAt: new Date() }
+    );
+
+    // Conversation 2: Student3 (Maria) and Faculty2 (Prof. Michael Brown)  
+    const conv2: Conversation = {
+      id: nextConversationId++,
+      name: null,
+      isGroup: false,
+      createdAt: new Date(now.getTime() - 172800000), // 2 days ago
+      updatedAt: new Date(now.getTime() - 86400000) // 1 day ago
+    };
+    conversations.push(conv2);
+    
+    conversationMembers.push(
+      { id: memberIdCounter++, conversationId: conv2.id, userId: student3.id, joinedAt: new Date() },
+      { id: memberIdCounter++, conversationId: conv2.id, userId: faculty2.id, joinedAt: new Date() }
+    );
+
+    // Conversation 3: Student4 (James) and Faculty3 (Dr. Emily Johnson)
+    const conv3: Conversation = {
+      id: nextConversationId++,
+      name: null,
+      isGroup: false,
+      createdAt: new Date(now.getTime() - 259200000), // 3 days ago
+      updatedAt: new Date(now.getTime() - 259200000) // 3 days ago
+    };
+    conversations.push(conv3);
+    
+    conversationMembers.push(
+      { id: memberIdCounter++, conversationId: conv3.id, userId: student4.id, joinedAt: new Date() },
+      { id: memberIdCounter++, conversationId: conv3.id, userId: faculty3.id, joinedAt: new Date() }
+    );
+
+    // Conversation 4: Student5 (Sarah) and Faculty4 (Prof. David Miller)
+    const conv4: Conversation = {
+      id: nextConversationId++,
+      name: null,
+      isGroup: false,
+      createdAt: new Date(now.getTime() - 604800000), // 1 week ago
+      updatedAt: new Date(now.getTime() - 345600000) // 4 days ago
+    };
+    conversations.push(conv4);
+    
+    conversationMembers.push(
+      { id: memberIdCounter++, conversationId: conv4.id, userId: student5.id, joinedAt: new Date() },
+      { id: memberIdCounter++, conversationId: conv4.id, userId: faculty4.id, joinedAt: new Date() }
+    );
+
+    // Conversation 5: CS 101 Study Group
+    const studyGroup: Conversation = {
+      id: nextConversationId++,
+      name: "CS 101 Study Group",
+      isGroup: true,
+      createdAt: new Date(now.getTime() - 432000000), // 5 days ago
+      updatedAt: new Date(now.getTime() - 172800000) // 2 days ago
+    };
+    conversations.push(studyGroup);
+    
+    conversationMembers.push(
+      { id: memberIdCounter++, conversationId: studyGroup.id, userId: student1.id, joinedAt: new Date() },
+      { id: memberIdCounter++, conversationId: studyGroup.id, userId: student2.id, joinedAt: new Date() },
+      { id: memberIdCounter++, conversationId: studyGroup.id, userId: student3.id, joinedAt: new Date() },
+      { id: memberIdCounter++, conversationId: studyGroup.id, userId: student4.id, joinedAt: new Date() }
     );
 
     const sampleMessages: Message[] = [
+      // Messages for Conversation 1 (Alex & Dr. Sarah Wilson)
       {
         id: nextMessageId++,
-        conversationId: studentFacultyConvo.id,
-        senderId: student1.id,
+        conversationId: conv1.id,
+        senderId: student2.id,
         content: "Hello Professor, I have a question about the upcoming assignment.",
         attachmentName: null,
         attachmentSize: null,
-        createdAt: new Date(new Date().getTime() - 3600000) // 1 hour ago
+        createdAt: new Date(now.getTime() - 3600000) // 1 hour ago
       },
       {
         id: nextMessageId++,
-        conversationId: studentFacultyConvo.id,
+        conversationId: conv1.id,
         senderId: faculty1.id,
-        content: "Of course! What would you like to know about the assignment?",
+        content: "Of course, what would you like to know?",
         attachmentName: null,
         attachmentSize: null,
-        createdAt: new Date(new Date().getTime() - 3000000) // 50 minutes ago
-      }
+        createdAt: new Date(now.getTime() - 2700000) // 45 minutes ago
+      },
+      {
+        id: nextMessageId++,
+        conversationId: conv1.id,
+        senderId: student2.id,
+        content: "I'm not sure about the requirements for the final project. Could you provide more details?",
+        attachmentName: null,
+        attachmentSize: null,
+        createdAt: new Date(now.getTime() - 2400000) // 40 minutes ago
+      },
+      {
+        id: nextMessageId++,
+        conversationId: conv1.id,
+        senderId: faculty1.id,
+        content: "The final project requires implementing a web application using the concepts we've covered in class. You'll need to include user authentication, database integration, and at least two core features. I'll send you the detailed document.",
+        attachmentName: null,
+        attachmentSize: null,
+        createdAt: new Date(now.getTime() - 2100000) // 35 minutes ago
+      },
+      {
+        id: nextMessageId++,
+        conversationId: conv1.id,
+        senderId: faculty1.id,
+        content: "Here's the document with all the requirements. Let me know if you have any other questions.",
+        attachmentName: "FinalProjectRequirements.pdf",
+        attachmentSize: "245 KB",
+        createdAt: new Date(now.getTime() - 1800000) // 30 minutes ago
+      },
+
+      // Messages for Conversation 2 (Maria & Prof. Michael Brown)
+      {
+        id: nextMessageId++,
+        conversationId: conv2.id,
+        senderId: student3.id,
+        content: "Thank you for the feedback on my project.",
+        attachmentName: null,
+        attachmentSize: null,
+        createdAt: new Date(now.getTime() - 86400000) // 1 day ago
+      },
+
+      // Messages for Conversation 3 (James & Dr. Emily Johnson)
+      {
+        id: nextMessageId++,
+        conversationId: conv3.id,
+        senderId: student4.id,
+        content: "I need help with the calculus problem.",
+        attachmentName: null,
+        attachmentSize: null,
+        createdAt: new Date(now.getTime() - 259200000) // 3 days ago
+      },
+
+      // Messages for Conversation 4 (Sarah & Prof. David Miller)
+      {
+        id: nextMessageId++,
+        conversationId: conv4.id,
+        senderId: student5.id,
+        content: "Can we discuss my essay during office hours?",
+        attachmentName: null,
+        attachmentSize: null,
+        createdAt: new Date(now.getTime() - 345600000) // 4 days ago
+      },
+
+      // Messages for Study Group
+      {
+        id: nextMessageId++,
+        conversationId: studyGroup.id,
+        senderId: student2.id,
+        content: "Let's meet at the library tomorrow.",
+        attachmentName: null,
+        attachmentSize: null,
+        createdAt: new Date(now.getTime() - 172800000) // 2 days ago
+      },
     ];
     messages.push(...sampleMessages);
     
-    console.log("✓ Test data initialized: 2 faculty members and 1 student");
-    console.log("  Faculty: F-12345 (Dr. Sarah Wilson), F-67890 (Prof. Michael Brown)");
-    console.log("  Student: S-54321 (John Smith)");
+    console.log("✓ Test data initialized: 4 faculty members and 5 students");
+    console.log("  Faculty: F-12345 (Dr. Sarah Wilson), F-67890 (Prof. Michael Brown), F-11111 (Dr. Emily Johnson), F-22222 (Prof. David Miller)");
+    console.log("  Students: S-54321 (John Smith), S-11111 (Alex Johnson), S-22222 (Maria Garcia), S-33333 (James Wilson), S-44444 (Sarah Ahmed)");
     console.log("  Login with universityId and password: 'password123'");
     console.log("✓ Sample classrooms and timetable initialized");
     console.log("✓ Sample conversations and messages initialized");
