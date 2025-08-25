@@ -42,7 +42,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(userWithoutPassword);
   });
 
-  // Get faculty list for dropdown
+  // Get faculty list for dropdown (legacy endpoint)
   app.get("/api/faculty", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized" });
@@ -59,6 +59,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching faculty list:", error);
       res.status(500).json({ message: "Failed to fetch faculty list" });
+    }
+  });
+
+  // Get all users for messaging (excluding current user)
+  app.get("/api/users", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const allUsers = await storage.getAllUsers();
+      const usersData = allUsers
+        .filter(user => user.id !== req.user.id) // Exclude current user
+        .map(user => ({
+          id: user.id,
+          fullName: user.fullName,
+          universityId: user.universityId,
+          role: user.role,
+        }));
+      res.json(usersData);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
     }
   });
 

@@ -16,7 +16,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Search, Plus, Send, Paperclip, Phone, Video, MoreHorizontal, 
-  Users, Star, Archive, Flag, Trash, Info, FilePlus, Image
+  Users, Star, Archive, Flag, Trash, Info, FilePlus, Image, MessageSquare
 } from "lucide-react";
 import { 
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, 
@@ -43,6 +43,8 @@ export default function MessagesPage() {
   const [currentConversation, setCurrentConversation] = useState<number | null>(null);
   const [message, setMessage] = useState("");
   const [showNewMessageDialog, setShowNewMessageDialog] = useState(false);
+  const [selectedRecipient, setSelectedRecipient] = useState("");
+  const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   if (!user) return <div className="hidden"></div>;
@@ -104,16 +106,60 @@ export default function MessagesPage() {
     },
   });
 
-  // Fetch faculty list for new messages
-  const { data: facultyList = [] } = useQuery({
-    queryKey: ['/api/faculty'],
-    enabled: !isFaculty && showNewMessageDialog,
+  // Create new conversation mutation
+  const createConversationMutation = useMutation({
+    mutationFn: async (data: { members: number[]; message: string }) => {
+      const conversationResponse = await apiRequest('/api/conversations', {
+        method: 'POST',
+        body: JSON.stringify({
+          members: data.members,
+          isGroup: false
+        }),
+      });
+
+      const conversation = await conversationResponse.json();
+
+      // Send the initial message
+      await apiRequest('/api/messages', {
+        method: 'POST',
+        body: JSON.stringify({
+          conversationId: conversation.id,
+          content: data.message
+        }),
+      });
+
+      return conversation;
+    },
+    onSuccess: (conversation) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/conversations'] });
+      setShowNewMessageDialog(false);
+      setSelectedRecipient("");
+      setNewMessage("");
+      setCurrentConversation(conversation.id);
+      toast({
+        title: "Conversation created",
+        description: "Your new conversation has been created successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create conversation",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Fetch all users for new messages (excluding current user)
+  const { data: usersList = [] } = useQuery({
+    queryKey: ['/api/users'],
+    enabled: showNewMessageDialog,
     queryFn: async () => {
-      const response = await fetch('/api/faculty', {
+      const response = await fetch('/api/users', {
         credentials: 'include',
       });
       if (!response.ok) {
-        throw new Error('Failed to fetch faculty');
+        throw new Error('Failed to fetch users');
       }
       return response.json();
     },
@@ -169,6 +215,23 @@ export default function MessagesPage() {
     });
   };
 
+  // Handle create new conversation
+  const handleCreateConversation = () => {
+    if (!selectedRecipient || newMessage.trim() === "") {
+      toast({
+        title: "Validation Error",
+        description: "Please select a recipient and enter a message.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    createConversationMutation.mutate({
+      members: [parseInt(selectedRecipient)],
+      message: newMessage.trim()
+    });
+  };
+
   const getConversationName = (conversation: any) => {
     if (conversation.name) {
       return conversation.name;
@@ -203,21 +266,21 @@ export default function MessagesPage() {
                   <DialogHeader>
                     <DialogTitle>New Message</DialogTitle>
                     <DialogDescription>
-                      Create a new conversation with {isFaculty ? 'a student' : 'a faculty member'}.
+                      Create a new conversation with another user.
                     </DialogDescription>
                   </DialogHeader>
                   
                   <div className="grid gap-4 py-4">
                     <div className="grid gap-2">
                       <label className="text-sm font-medium">Recipient</label>
-                      <Select>
+                      <Select value={selectedRecipient} onValueChange={setSelectedRecipient}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select recipient" />
                         </SelectTrigger>
                         <SelectContent>
-                          {facultyList.map((faculty: any) => (
-                            <SelectItem key={faculty.id} value={faculty.id.toString()}>
-                              {faculty.fullName} ({faculty.universityId})
+                          {usersList.map((otherUser: any) => (
+                            <SelectItem key={otherUser.id} value={otherUser.id.toString()}>
+                              {otherUser.fullName} ({otherUser.universityId}) - {otherUser.role === 'faculty' ? 'Faculty' : 'Student'}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -229,6 +292,8 @@ export default function MessagesPage() {
                       <Textarea 
                         placeholder="Type your message here" 
                         rows={4}
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
                       />
                     </div>
                   </div>
@@ -237,8 +302,11 @@ export default function MessagesPage() {
                     <Button variant="outline" onClick={() => setShowNewMessageDialog(false)}>
                       Cancel
                     </Button>
-                    <Button onClick={() => setShowNewMessageDialog(false)}>
-                      Send Message
+                    <Button 
+                      onClick={handleCreateConversation}
+                      disabled={createConversationMutation.isPending || !selectedRecipient || !newMessage.trim()}
+                    >
+                      {createConversationMutation.isPending ? "Creating..." : "Send Message"}
                     </Button>
                   </DialogFooter>
                 </DialogContent>

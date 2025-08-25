@@ -163,6 +163,7 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   getFacultyList(): Promise<User[]>;
+  getAllUsers(): Promise<User[]>;
   createCallbackRequest(request: CreateCallbackRequest & { studentId: number }): Promise<CallbackRequest>;
   getStudentRequests(studentId: number): Promise<(CallbackRequest & { facultyName: string })[]>;
   getFacultyRequests(facultyId: number): Promise<(CallbackRequest & { studentName: string; studentUniversityId: string })[]>;
@@ -221,6 +222,10 @@ export class MemoryStorage implements IStorage {
 
   async getFacultyList(): Promise<User[]> {
     return users.filter(user => user.role === 'faculty');
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return users;
   }
 
   async createCallbackRequest(request: CreateCallbackRequest & { studentId: number }): Promise<CallbackRequest> {
