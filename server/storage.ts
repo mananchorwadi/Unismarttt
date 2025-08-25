@@ -109,6 +109,10 @@ export class DatabaseStorage implements IStorage {
     return memoryStorage.getTimetable();
   }
 
+  async getAllUsers(): Promise<User[]> {
+    return memoryStorage.getAllUsers();
+  }
+
   async getFreeClassrooms(day: string, startTime: string, endTime: string): Promise<Array<Classroom & { freeUntil?: string }>> {
     return memoryStorage.getFreeClassrooms(day, startTime, endTime);
   }

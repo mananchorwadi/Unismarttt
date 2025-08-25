@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { WebSocketServer, WebSocket } from "ws";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { 
@@ -13,6 +14,9 @@ import {
 } from "@shared/schema";
 import { ZodError } from "zod";
 import { formatZodError } from "./utils";
+
+// WebSocket connection map
+const wsConnections = new Map<number, WebSocket>();
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
@@ -248,6 +252,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = createMessageSchema.parse(req.body);
       const message = await storage.createMessage(validatedData, req.user.id);
+      
+      // Get conversation members to broadcast the message
+      const conversations = await storage.getUserConversations(req.user.id);
+      const conversation = conversations.find(c => c.id === validatedData.conversationId);
+      
+      if (conversation) {
+        // Get the message with sender info for broadcasting
+        const messageWithSender = await storage.getConversationMessages(validatedData.conversationId, req.user.id);
+        const newMessage = messageWithSender[messageWithSender.length - 1];
+        
+        // Broadcast to all conversation members
+        conversation.members.forEach(member => {
+          const ws = wsConnections.get(member.id);
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({
+              type: 'new_message',
+              conversationId: validatedData.conversationId,
+              message: newMessage
+            }));
+          }
+        });
+      }
+      
       res.status(201).json(message);
     } catch (error) {
       if (error instanceof ZodError) {
@@ -375,6 +402,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   const httpServer = createServer(app);
+
+  // Set up WebSocket server on /ws path
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+
+  wss.on('connection', (ws, req) => {
+    console.log('WebSocket connection established');
+    
+    ws.on('message', async (data) => {
+      try {
+        const message = JSON.parse(data.toString());
+        
+        if (message.type === 'authenticate' && message.userId) {
+          // Store the connection with user ID
+          wsConnections.set(message.userId, ws);
+          console.log(`User ${message.userId} connected via WebSocket`);
+          
+          ws.send(JSON.stringify({
+            type: 'authenticated',
+            userId: message.userId
+          }));
+        }
+      } catch (error) {
+        console.error('WebSocket message error:', error);
+      }
+    });
+
+    ws.on('close', () => {
+      // Remove the connection from the map
+      for (const [userId, connection] of wsConnections) {
+        if (connection === ws) {
+          wsConnections.delete(userId);
+          console.log(`User ${userId} disconnected from WebSocket`);
+          break;
+        }
+      }
+    });
+
+    ws.on('error', (error) => {
+      console.error('WebSocket error:', error);
+    });
+  });
   
   return httpServer;
 }

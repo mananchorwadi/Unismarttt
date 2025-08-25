@@ -180,6 +180,7 @@ export interface IStorage {
   getClassrooms(): Promise<Classroom[]>;
   createTimetableEntry(entry: CreateTimetableEntry): Promise<TimetableEntry>;
   getTimetable(): Promise<Array<TimetableEntry & { roomNo: string }>>;
+  getAllUsers(): Promise<User[]>;
   getFreeClassrooms(day: string, startTime: string, endTime: string): Promise<Array<Classroom & { freeUntil?: string }>>;
   
   sessionStore: session.Store;
@@ -426,6 +427,10 @@ export class MemoryStorage implements IStorage {
         roomNo: room ? room.roomNo : 'Unknown Room'
       };
     });
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return users;
   }
 
   async getFreeClassrooms(day: string, startTime: string, endTime: string): Promise<Array<Classroom & { freeUntil?: string }>> {

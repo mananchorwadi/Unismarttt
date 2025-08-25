@@ -46,6 +46,7 @@ export default function MessagesPage() {
   const [selectedRecipient, setSelectedRecipient] = useState("");
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const wsRef = useRef<WebSocket | null>(null);
   
   if (!user) return <div className="hidden"></div>;
   
@@ -83,10 +84,7 @@ export default function MessagesPage() {
   // Send message mutation
   const sendMessageMutation = useMutation({
     mutationFn: async (messageData: { conversationId: number; content: string }) => {
-      return apiRequest(`/api/messages`, {
-        method: 'POST',
-        body: JSON.stringify(messageData),
-      });
+      return apiRequest('POST', '/api/messages', messageData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/conversations'] });
@@ -109,23 +107,17 @@ export default function MessagesPage() {
   // Create new conversation mutation
   const createConversationMutation = useMutation({
     mutationFn: async (data: { members: number[]; message: string }) => {
-      const conversationResponse = await apiRequest('/api/conversations', {
-        method: 'POST',
-        body: JSON.stringify({
-          members: data.members,
-          isGroup: false
-        }),
+      const conversationResponse = await apiRequest('POST', '/api/conversations', {
+        members: data.members,
+        isGroup: false
       });
 
       const conversation = await conversationResponse.json();
 
       // Send the initial message
-      await apiRequest('/api/messages', {
-        method: 'POST',
-        body: JSON.stringify({
-          conversationId: conversation.id,
-          content: data.message
-        }),
+      await apiRequest('POST', '/api/messages', {
+        conversationId: conversation.id,
+        content: data.message
       });
 
       return conversation;
@@ -198,6 +190,57 @@ export default function MessagesPage() {
     }
   };
   
+  // WebSocket connection setup
+  useEffect(() => {
+    if (!user) return;
+
+    // Create WebSocket connection
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const wsUrl = `${protocol}//${window.location.host}/ws`;
+    const ws = new WebSocket(wsUrl);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      console.log('WebSocket connected');
+      // Authenticate with user ID
+      ws.send(JSON.stringify({
+        type: 'authenticate',
+        userId: user.id
+      }));
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        
+        if (data.type === 'authenticated') {
+          console.log('WebSocket authenticated for user:', data.userId);
+        } else if (data.type === 'new_message') {
+          // Invalidate queries to refresh conversations and messages
+          queryClient.invalidateQueries({ queryKey: ['/api/conversations'] });
+          if (data.conversationId === currentConversation) {
+            queryClient.invalidateQueries({ queryKey: ['/api/conversations', currentConversation, 'messages'] });
+          }
+        }
+      } catch (error) {
+        console.error('WebSocket message parsing error:', error);
+      }
+    };
+
+    ws.onclose = () => {
+      console.log('WebSocket disconnected');
+    };
+
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+
+    // Cleanup on unmount
+    return () => {
+      ws.close();
+    };
+  }, [user, currentConversation]);
+
   // Scroll to bottom of messages when conversation changes or new message is added
   useEffect(() => {
     if (messagesEndRef.current) {
