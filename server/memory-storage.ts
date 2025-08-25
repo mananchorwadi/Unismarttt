@@ -410,7 +410,92 @@ export class MemoryStorage implements IStorage {
       createdAt: new Date(),
     };
     users.push(user);
+
+    // Automatically add new users to sample conversations for demo purposes
+    this.addUserToSampleConversations(user);
+
     return user;
+  }
+
+  private addUserToSampleConversations(newUser: User) {
+    // Add new user to the CS 101 Study Group if it exists
+    const studyGroupConv = conversations.find(c => c.name === "CS 101 Study Group");
+    if (studyGroupConv) {
+      const existingMember = conversationMembers.find(cm => 
+        cm.conversationId === studyGroupConv.id && cm.userId === newUser.id
+      );
+      if (!existingMember) {
+        conversationMembers.push({
+          id: conversationMembers.length + 1,
+          conversationId: studyGroupConv.id,
+          userId: newUser.id,
+          joinedAt: new Date()
+        });
+      }
+    }
+
+    // Create a sample conversation with one of the faculty members
+    const availableFaculty = users.filter(u => u.role === 'faculty');
+    if (availableFaculty.length > 0) {
+      const randomFaculty = availableFaculty[Math.floor(Math.random() * availableFaculty.length)];
+      
+      // Check if conversation already exists between these users
+      const existingConv = conversations.find(conv => {
+        const members = conversationMembers.filter(cm => cm.conversationId === conv.id);
+        return members.length === 2 && 
+               members.some(m => m.userId === newUser.id) && 
+               members.some(m => m.userId === randomFaculty.id);
+      });
+
+      if (!existingConv) {
+        // Create new conversation
+        const newConv: Conversation = {
+          id: nextConversationId++,
+          name: null,
+          isGroup: false,
+          createdAt: new Date(new Date().getTime() - Math.floor(Math.random() * 86400000)), // Random time in past day
+          updatedAt: new Date(new Date().getTime() - Math.floor(Math.random() * 3600000)) // Random time in past hour
+        };
+        conversations.push(newConv);
+
+        // Add members
+        conversationMembers.push(
+          { id: conversationMembers.length + 1, conversationId: newConv.id, userId: newUser.id, joinedAt: new Date() },
+          { id: conversationMembers.length + 2, conversationId: newConv.id, userId: randomFaculty.id, joinedAt: new Date() }
+        );
+
+        // Add sample messages
+        const sampleMessages = [
+          `Hello ${newUser.role === 'faculty' ? 'Professor' : ''} ${newUser.fullName}, welcome to the university messaging system!`,
+          `Hi! Thanks for reaching out. How can I help you today?`,
+          `I wanted to introduce myself. Looking forward to working together this semester.`
+        ];
+        
+        const randomMessage = sampleMessages[Math.floor(Math.random() * sampleMessages.length)];
+        const isStudentSender = newUser.role === 'student';
+        
+        messages.push({
+          id: nextMessageId++,
+          conversationId: newConv.id,
+          senderId: isStudentSender ? newUser.id : randomFaculty.id,
+          content: randomMessage,
+          attachmentName: null,
+          attachmentSize: null,
+          createdAt: new Date(new Date().getTime() - Math.floor(Math.random() * 3600000))
+        });
+
+        // Add a reply
+        messages.push({
+          id: nextMessageId++,
+          conversationId: newConv.id,
+          senderId: isStudentSender ? randomFaculty.id : newUser.id,
+          content: "Great to meet you! Feel free to reach out if you have any questions.",
+          attachmentName: null,
+          attachmentSize: null,
+          createdAt: new Date(new Date().getTime() - Math.floor(Math.random() * 1800000))
+        });
+      }
+    }
   }
 
   async getFacultyList(): Promise<User[]> {
