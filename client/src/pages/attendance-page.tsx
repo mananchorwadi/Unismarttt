@@ -1,8 +1,7 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { DashLayout } from "@/components/dashboard/dash-layout";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress"; 
@@ -10,475 +9,335 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Switch } from "@/components/ui/switch";
-import { 
-  Camera, Check, ChevronDown, Calendar as CalendarIcon, Clock, 
-  Download, FileText, Search, Users, X, BarChart3
-} from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Calendar as CalendarIcon, Check, Clock, FileText, Search, UserPlus, X, BarChart3 } from "lucide-react";
 
+// --- API Configuration ---
+const API_BASE_URL = 'http://localhost:5000/api';
+
+// --- API Client ---
+class AttendanceAPI {
+  static async request(endpoint, options = {}) {
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        headers: { 'Content-Type': 'application/json' },
+        ...options,
+      });
+      return await response.json();
+    } catch (error) {
+      console.error(`API request to ${endpoint} failed:`, error);
+      return { success: false, message: 'Cannot connect to the local server. Please ensure it is running.' };
+    }
+  }
+
+  static startAttendance(lectureData) {
+    return this.request('/start-camera', { method: 'POST', body: JSON.stringify(lectureData) });
+  }
+
+  static stopAttendance() {
+    return this.request('/stop-camera', { method: 'POST' });
+  }
+
+  static registerStudent(studentData) {
+    return this.request('/register-student', { method: 'POST', body: JSON.stringify(studentData) });
+  }
+
+  static getRegistrationStatus() {
+    return this.request('/registration-status');
+  }
+
+  static getSystemStatus() {
+    return this.request('/status');
+  }
+
+  static healthCheck() {
+    return this.request('/health');
+  }
+
+  static getAttendanceReport(filters = {}) {
+    const queryParams = new URLSearchParams(filters).toString();
+    return this.request(`/attendance-report?${queryParams}`);
+  }
+}
+
+// --- Main Component ---
 export default function AttendancePage() {
   const { user } = useAuth();
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [cameraActive, setCameraActive] = useState(false);
-  const [recognizing, setRecognizing] = useState(false);
-  const [recognitionProgress, setRecognitionProgress] = useState(0);
-  const [selectedClass, setSelectedClass] = useState<string>("");
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [attendanceMode, setAttendanceMode] = useState<"manual" | "auto">("auto");
-  const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([]);
-  const [aiEnabled, setAiEnabled] = useState(true);
+  const [systemStatus, setSystemStatus] = useState({ camera_running: false, registration_running: false });
+  const [serverConnected, setServerConnected] = useState(false);
+  const [apiMessage, setApiMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [showRegistrationForm, setShowRegistrationForm] = useState(false);
+  const [registrationForm, setRegistrationForm] = useState({ student_id: '', name: '', department: '' });
+  const [selectedClass, setSelectedClass] = useState("");
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [attendanceData, setAttendanceData] = useState([]);
 
-  type AttendanceRecord = {
-    id: number;
-    name: string;
-    studentId: string;
-    status: "present" | "absent" | "late";
-    timeIn?: string;
-    verificationMethod: "face" | "manual" | "pending";
-  };
+  // --- Constants as per your request ---
+  const TOTAL_STUDENTS_IN_CLASS = 66;
 
   // Mock class data
   const classes = [
-    { id: "cs101", name: "Introduction to Computer Science", students: 35, schedule: "Mon/Wed/Fri 10:00 AM" },
-    { id: "math202", name: "Advanced Calculus", students: 28, schedule: "Tue/Thu 1:00 PM" },
-    { id: "eng101", name: "English Composition", students: 42, schedule: "Mon/Wed 3:00 PM" },
+    { id: "QR101", name: "Quantum Computing", schedule: "Mon/Wed 11:00 AM" },
+    { id: "DS303", name: "Data Structures", schedule: "Tue/Thu 2:00 PM" },
+    { id: "AI202", name: "Advanced AI", schedule: "Fri 9:00 AM" },
   ];
 
-  // Mock student data for the selected class
-  const mockStudents = [
-    { id: 1, name: "Alex Johnson", studentId: "S-35412", status: "present", timeIn: "10:02 AM", verificationMethod: "face" },
-    { id: 2, name: "Maria Garcia", studentId: "S-35678", status: "present", timeIn: "9:58 AM", verificationMethod: "face" },
-    { id: 3, name: "James Wilson", studentId: "S-36712", status: "late", timeIn: "10:15 AM", verificationMethod: "face" },
-    { id: 4, name: "Sarah Ahmed", studentId: "S-37845", status: "absent", verificationMethod: "manual" },
-    { id: 5, name: "David Chen", studentId: "S-38921", status: "present", timeIn: "10:05 AM", verificationMethod: "face" },
-    { id: 6, name: "Olivia Brown", studentId: "S-39056", status: "present", timeIn: "10:01 AM", verificationMethod: "face" },
-    { id: 7, name: "Michael Smith", studentId: "S-40123", status: "absent", verificationMethod: "manual" },
-    { id: 8, name: "Emma Davis", studentId: "S-40789", status: "present", timeIn: "9:59 AM", verificationMethod: "face" },
-  ];
-
+  // --- Effects ---
   useEffect(() => {
-    // Initialize with mock data when a class is selected
-    if (selectedClass) {
-      setAttendanceData(mockStudents as AttendanceRecord[]);
-    } else {
-      setAttendanceData([]);
-    }
-  }, [selectedClass]);
-
-  useEffect(() => {
-    // Handle camera activation/deactivation
-    if (cameraActive && videoRef.current) {
-      navigator.mediaDevices
-        .getUserMedia({ video: true })
-        .then((stream) => {
-          if (videoRef.current) {
-            videoRef.current.srcObject = stream;
-          }
-        })
-        .catch((err) => {
-          console.error("Error accessing camera:", err);
-          setCameraActive(false);
-        });
-    } else if (videoRef.current?.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach((track) => track.stop());
-      videoRef.current.srcObject = null;
-    }
-
-    return () => {
-      if (videoRef.current?.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream;
-        stream.getTracks().forEach((track) => track.stop());
+    const checkServer = async () => {
+      const health = await AttendanceAPI.healthCheck();
+      const isConnected = health.status === 'healthy';
+      setServerConnected(isConnected);
+      if (isConnected) {
+        const status = await AttendanceAPI.getSystemStatus();
+        setSystemStatus(status);
       }
     };
-  }, [cameraActive]);
+    checkServer();
+    const interval = setInterval(checkServer, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
-  // Simulate face recognition process
-  const startRecognition = () => {
-    if (!selectedClass) return;
-    
-    setRecognizing(true);
-    setRecognitionProgress(0);
+  // --- Helper Function ---
+  const formatDateForId = (date) => {
+    if (!date) return '';
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
 
-    const interval = setInterval(() => {
-      setRecognitionProgress((prev) => {
-        const newProgress = prev + Math.random() * 15;
-        if (newProgress >= 100) {
-          clearInterval(interval);
-          setTimeout(() => {
-            setRecognizing(false);
-            setRecognitionProgress(100);
-            // In a real app, this would update the attendance data from the API
-            // For this demo, we'll just use our mock data which is already "recognized"
-          }, 500);
-          return 100;
+  // --- API Handlers ---
+  const handleStartAttendance = async () => {
+    if (!selectedClass) {
+      setApiMessage('Please select a class first.');
+      return;
+    }
+
+    setLoading(true);
+    setApiMessage('Starting attendance system...');
+    setAttendanceData([]); // Clear previous logs
+
+    const lectureData = {
+      lecture_id: `${selectedClass}_${formatDateForId(selectedDate)}`, // <-- THE FIX IS HERE
+      course_code: selectedClass,
+      instructor: user?.name || "Prof. Michael Brown", // Fetch from profile or use default
+      room: "A-317", // Default room
+    };
+
+    const result = await AttendanceAPI.startAttendance(lectureData);
+
+    if (result.success) {
+      setApiMessage(`Attendance started for ${lectureData.course_code} in room ${lectureData.room}.\nLecture ID: ${result.lecture_id}`);
+    } else {
+      setApiMessage(`Error starting attendance: ${result.message}`);
+    }
+    setLoading(false);
+  };
+
+  const handleStopAttendance = async () => {
+    setLoading(true);
+    setApiMessage('Stopping attendance system...');
+    const result = await AttendanceAPI.stopAttendance();
+
+    if (result.success) {
+      setApiMessage(`Attendance stopped.\nTotal students marked: ${result.attendance_count}`);
+
+      if (result.lecture_id) {
+        const report = await AttendanceAPI.getAttendanceReport({ lecture_id: result.lecture_id });
+        if (report.success) {
+          const realAttendanceData = report.data.map((record, index) => ({
+            id: index + 1,
+            name: record.student_id,
+            studentId: record.student_id,
+            status: "present",
+            timeIn: new Date(record.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            verificationMethod: "face",
+          }));
+          setAttendanceData(realAttendanceData);
         }
-        return newProgress;
-      });
-    }, 500);
+      }
+    } else {
+      setApiMessage(`Error stopping attendance: ${result.message}`);
+    }
+    setLoading(false);
   };
 
-  const formatDate = (date?: Date) => {
-    if (!date) return "";
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
+  const handleRegisterStudent = async () => {
+    if (!registrationForm.student_id || !registrationForm.name || !registrationForm.department) {
+      setApiMessage('Please fill all registration fields.');
+      return;
+    }
+    setLoading(true);
+    setApiMessage(`Starting registration for ${registrationForm.name}...`);
+    const result = await AttendanceAPI.registerStudent(registrationForm);
+
+    if (result.success) {
+      setApiMessage('Registration process started. A camera window will open. Please follow the instructions there.');
+      const poll = setInterval(async () => {
+        const status = await AttendanceAPI.getRegistrationStatus();
+        if (status.status === 'completed') {
+          setApiMessage(`Registration successful for ${registrationForm.name}!`);
+          clearInterval(poll);
+          setLoading(false);
+          setShowRegistrationForm(false);
+          setRegistrationForm({ student_id: '', name: '', department: '' });
+        } else if (status.status === 'failed') {
+          setApiMessage(`Registration failed: ${status.error}`);
+          clearInterval(poll);
+          setLoading(false);
+        }
+      }, 3000);
+    } else {
+      setApiMessage(`Error starting registration: ${result.message}`);
+      setLoading(false);
+    }
   };
 
-  const toggleAttendance = (studentId: number, status: "present" | "absent" | "late") => {
-    setAttendanceData((prev) =>
-      prev.map((student) =>
-        student.id === studentId
-          ? { 
-              ...student, 
-              status, 
-              timeIn: status === "absent" ? undefined : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-              verificationMethod: "manual" 
-            }
-          : student
-      )
-    );
-  };
+  // --- Statistics Calculation (Updated Logic) ---
+  const presentCount = attendanceData.length;
+  const absentCount = TOTAL_STUDENTS_IN_CLASS - presentCount;
+  const presentPercentage = TOTAL_STUDENTS_IN_CLASS > 0 ? Math.round((presentCount / TOTAL_STUDENTS_IN_CLASS) * 100) : 0;
 
   const attendanceStats = {
-    present: attendanceData.filter(s => s.status === "present").length,
-    late: attendanceData.filter(s => s.status === "late").length,
-    absent: attendanceData.filter(s => s.status === "absent").length,
-    total: attendanceData.length
+    present: presentCount,
+    late: 0,
+    absent: absentCount < 0 ? 0 : absentCount,
+    total: TOTAL_STUDENTS_IN_CLASS,
   };
 
-  const presentPercentage = attendanceData.length ? 
-    Math.round(((attendanceStats.present + attendanceStats.late) / attendanceData.length) * 100) : 0;
-
   return (
-    <DashLayout 
-      title="Smart Attendance" 
-      description="AI-powered attendance tracking system"
-    >
+    <DashLayout title="Smart Attendance" description="AI-powered attendance tracking system">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle>Today's Attendance</CardTitle>
-            <CardDescription>
-              Track attendance for your classes with AI facial recognition
-            </CardDescription>
+            <CardDescription>Track attendance for your classes with AI facial recognition</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="w-full md:w-1/2 space-y-2">
-                  <Label htmlFor="class-select">Select Class</Label>
-                  <Select value={selectedClass} onValueChange={setSelectedClass}>
-                    <SelectTrigger id="class-select">
-                      <SelectValue placeholder="Select a class" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {classes.map((cls) => (
-                        <SelectItem key={cls.id} value={cls.id}>
-                          {cls.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+          <CardContent className="space-y-4">
+            {!serverConnected ? (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
+                <strong>Backend Server Not Running.</strong> Please start it with: <code className="bg-red-100 px-1 rounded">python api_server.py</code>
+              </div>
+            ) : (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-blue-800">
+                <strong>System Status:</strong> Camera {systemStatus.camera_running ? '🟢 Active' : '⚪ Stopped'} | Registration {systemStatus.registration_running ? '🟡 In Progress' : '⚪ Ready'}
+              </div>
+            )}
+
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="w-full md:w-1/2 space-y-2">
+                <Label htmlFor="class-select">Select Class</Label>
+                <Select value={selectedClass} onValueChange={setSelectedClass} disabled={systemStatus.camera_running}>
+                  <SelectTrigger><SelectValue placeholder="Select a class" /></SelectTrigger>
+                  <SelectContent>
+                    {classes.map((cls) => <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-full md:w-1/2 space-y-2">
+                <Label>Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start text-left font-normal">
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {selectedDate ? selectedDate.toLocaleDateString() : "Select date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} initialFocus /></PopoverContent>
+                </Popover>
+              </div>
+            </div>
+
+            <div className="border rounded-lg p-4 space-y-4">
+              <h3 className="text-lg font-semibold">Attendance Control</h3>
+              <div className="flex flex-wrap gap-3">
+                <Button onClick={handleStartAttendance} disabled={loading || !serverConnected || systemStatus.camera_running || !selectedClass} className="flex-1 min-w-[150px]">Start Attendance</Button>
+                <Button variant="destructive" onClick={handleStopAttendance} disabled={loading || !serverConnected || !systemStatus.camera_running} className="flex-1 min-w-[150px]">Stop Attendance</Button>
+                <Button variant="outline" onClick={() => setShowRegistrationForm(!showRegistrationForm)} disabled={loading || !serverConnected || systemStatus.registration_running} className="flex-1 min-w-[150px]"><UserPlus className="mr-2 h-4 w-4" /> Register Student</Button>
+              </div>
+            </div>
+
+            {showRegistrationForm && (
+              <div className="border rounded-lg p-4 space-y-4">
+                <h3 className="font-semibold">Register New Student</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Input placeholder="Student ID" value={registrationForm.student_id} onChange={(e) => setRegistrationForm({...registrationForm, student_id: e.target.value})} disabled={loading} />
+                  <Input placeholder="Full Name" value={registrationForm.name} onChange={(e) => setRegistrationForm({...registrationForm, name: e.target.value})} disabled={loading} />
+                  <Input placeholder="Department" value={registrationForm.department} onChange={(e) => setRegistrationForm({...registrationForm, department: e.target.value})} disabled={loading} />
                 </div>
-                
-                <div className="w-full md:w-1/2 space-y-2">
-                  <Label>Date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start text-left font-normal"
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {selectedDate ? formatDate(selectedDate) : "Select date"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={selectedDate}
-                        onSelect={setSelectedDate}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
+                <div className="flex gap-2">
+                  <Button onClick={handleRegisterStudent} disabled={loading}>Start Face Registration</Button>
+                  <Button variant="outline" onClick={() => setShowRegistrationForm(false)} disabled={loading}>Cancel</Button>
                 </div>
               </div>
-              
-              {selectedClass && (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Label htmlFor="ai-toggle">AI Facial Recognition</Label>
-                      <Switch 
-                        id="ai-toggle" 
-                        checked={aiEnabled}
-                        onCheckedChange={setAiEnabled}
-                      />
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => setAttendanceMode(attendanceMode === "auto" ? "manual" : "auto")}
-                      >
-                        {attendanceMode === "auto" ? "Switch to Manual" : "Switch to Auto"}
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => window.print()}
-                      >
-                        <Download className="mr-2 h-4 w-4" />
-                        Export
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  {attendanceMode === "auto" && aiEnabled && (
-                    <div className="border rounded-lg p-4 space-y-4">
-                      <div className="flex flex-col md:flex-row items-center gap-4">
-                        <div className="w-full md:w-2/5 aspect-video bg-muted rounded-lg overflow-hidden relative">
-                          {cameraActive ? (
-                            <video
-                              ref={videoRef}
-                              autoPlay
-                              playsInline
-                              muted
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="flex items-center justify-center h-full">
-                              <Camera className="h-12 w-12 text-muted-foreground" />
-                            </div>
-                          )}
-                          
-                          {recognizing && (
-                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                              <div className="text-center space-y-2 p-4 rounded-lg">
-                                <p className="text-white font-medium">Recognizing Students</p>
-                                <Progress value={recognitionProgress} />
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                        
-                        <div className="w-full md:w-3/5 space-y-4">
-                          <h3 className="text-lg font-semibold">
-                            AI-Powered Attendance
-                          </h3>
-                          <p className="text-muted-foreground text-sm">
-                            The system will automatically recognize students as they enter the classroom 
-                            and mark their attendance. The facial recognition system works in real-time 
-                            and maintains high accuracy even in varying lighting conditions.
-                          </p>
-                          
-                          <div className="flex flex-wrap gap-2">
-                            <Button
-                              onClick={() => setCameraActive(!cameraActive)}
-                              variant={cameraActive ? "destructive" : "default"}
-                            >
-                              {cameraActive ? "Stop Camera" : "Start Camera"}
-                            </Button>
-                            
-                            {cameraActive && !recognizing && (
-                              <Button onClick={startRecognition} disabled={!selectedClass}>
-                                Start Recognition
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {attendanceData.length > 0 && (
-                    <div className="border rounded-lg">
-                      <div className="p-4 flex items-center justify-between border-b">
-                        <h3 className="font-medium">
-                          {classes.find(c => c.id === selectedClass)?.name} - Attendance List
-                        </h3>
-                        <div className="relative">
-                          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                          <Input 
-                            type="search" 
-                            placeholder="Search students..." 
-                            className="pl-8 w-[200px]"
-                          />
-                        </div>
-                      </div>
-                      
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Student</TableHead>
-                            <TableHead>ID</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Time In</TableHead>
-                            <TableHead>Verification</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {attendanceData.map((student) => (
-                            <TableRow key={student.id}>
-                              <TableCell className="font-medium">{student.name}</TableCell>
-                              <TableCell>{student.studentId}</TableCell>
-                              <TableCell>
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                  student.status === "present" 
-                                    ? "bg-green-100 text-green-800" 
-                                    : student.status === "late"
-                                    ? "bg-yellow-100 text-yellow-800"
-                                    : "bg-red-100 text-red-800"
-                                }`}>
-                                  {student.status.charAt(0).toUpperCase() + student.status.slice(1)}
-                                </span>
-                              </TableCell>
-                              <TableCell>
-                                {student.timeIn || "-"}
-                              </TableCell>
-                              <TableCell>
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                  student.verificationMethod === "face" 
-                                    ? "bg-blue-100 text-blue-800" 
-                                    : "bg-gray-100 text-gray-800"
-                                }`}>
-                                  {student.verificationMethod === "face" ? "AI" : "Manual"}
-                                </span>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <div className="flex justify-end gap-1">
-                                  <Button 
-                                    size="icon" 
-                                    variant="ghost" 
-                                    onClick={() => toggleAttendance(student.id, "present")}
-                                    className={student.status === "present" ? "text-green-600" : ""}
-                                  >
-                                    <Check className="h-4 w-4" />
-                                  </Button>
-                                  <Button 
-                                    size="icon" 
-                                    variant="ghost"
-                                    onClick={() => toggleAttendance(student.id, "late")}
-                                    className={student.status === "late" ? "text-yellow-600" : ""}
-                                  >
-                                    <Clock className="h-4 w-4" />
-                                  </Button>
-                                  <Button 
-                                    size="icon" 
-                                    variant="ghost"
-                                    onClick={() => toggleAttendance(student.id, "absent")}
-                                    className={student.status === "absent" ? "text-red-600" : ""}
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  )}
-                </div>
-              )}
+            )}
+
+            {apiMessage && <div className="border rounded-lg p-4 bg-gray-50"><pre className="whitespace-pre-wrap text-sm font-medium">{apiMessage}</pre></div>}
+
+            <div className="border rounded-lg">
+              <div className="p-4 border-b"><h3 className="font-medium">Attendance Logs</h3></div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Student</TableHead>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Time In</TableHead>
+                    <TableHead>Verification</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {attendanceData.length > 0 ? attendanceData.map((student) => (
+                    <TableRow key={student.id}>
+                      <TableCell className="font-medium">{student.name}</TableCell>
+                      <TableCell>{student.studentId}</TableCell>
+                      <TableCell><span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Present</span></TableCell>
+                      <TableCell>{student.timeIn}</TableCell>
+                      <TableCell><span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">AI</span></TableCell>
+                    </TableRow>
+                  )) : <TableRow><TableCell colSpan={5} className="text-center">No attendance marked yet for this session.</TableCell></TableRow>}
+                </TableBody>
+              </Table>
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader>
             <CardTitle>Attendance Statistics</CardTitle>
-            <CardDescription>
-              {selectedClass 
-                ? `${formatDate(selectedDate)}`
-                : "Select a class to view stats"}
-            </CardDescription>
+            <CardDescription>{selectedClass ? `${classes.find(c => c.id === selectedClass)?.name}` : "Select a class"}</CardDescription>
           </CardHeader>
           <CardContent>
             {selectedClass ? (
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">Overall Attendance</span>
-                    <span className="text-sm font-medium">{presentPercentage}%</span>
-                  </div>
+                  <div className="flex justify-between items-center"><span className="text-sm font-medium">Overall Attendance</span><span className="text-sm font-medium">{presentPercentage}%</span></div>
                   <Progress value={presentPercentage} className="h-2" />
                 </div>
-                
-                <div className="space-y-2">
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="rounded-lg border p-3 text-center">
-                      <p className="text-sm text-muted-foreground">Present</p>
-                      <p className="text-2xl font-bold text-green-600">{attendanceStats.present}</p>
-                    </div>
-                    <div className="rounded-lg border p-3 text-center">
-                      <p className="text-sm text-muted-foreground">Late</p>
-                      <p className="text-2xl font-bold text-yellow-600">{attendanceStats.late}</p>
-                    </div>
-                    <div className="rounded-lg border p-3 text-center">
-                      <p className="text-sm text-muted-foreground">Absent</p>
-                      <p className="text-2xl font-bold text-red-600">{attendanceStats.absent}</p>
-                    </div>
-                  </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="rounded-lg border p-3 text-center"><p className="text-sm text-muted-foreground">Present</p><p className="text-2xl font-bold text-green-600">{attendanceStats.present}</p></div>
+                  <div className="rounded-lg border p-3 text-center"><p className="text-sm text-muted-foreground">Late</p><p className="text-2xl font-bold text-yellow-600">{attendanceStats.late}</p></div>
+                  <div className="rounded-lg border p-3 text-center"><p className="text-sm text-muted-foreground">Absent</p><p className="text-2xl font-bold text-red-600">{attendanceStats.absent}</p></div>
                 </div>
-                
                 <div className="space-y-2 pt-4">
                   <h4 className="text-sm font-medium">Class Information</h4>
                   <div className="rounded-lg border divide-y">
-                    <div className="px-4 py-3 flex justify-between">
-                      <span className="text-sm text-muted-foreground">Class</span>
-                      <span className="text-sm font-medium">
-                        {classes.find(c => c.id === selectedClass)?.name}
-                      </span>
-                    </div>
-                    <div className="px-4 py-3 flex justify-between">
-                      <span className="text-sm text-muted-foreground">Students</span>
-                      <span className="text-sm font-medium">
-                        {classes.find(c => c.id === selectedClass)?.students}
-                      </span>
-                    </div>
-                    <div className="px-4 py-3 flex justify-between">
-                      <span className="text-sm text-muted-foreground">Schedule</span>
-                      <span className="text-sm font-medium">
-                        {classes.find(c => c.id === selectedClass)?.schedule}
-                      </span>
-                    </div>
+                    <div className="px-4 py-3 flex justify-between"><span className="text-sm text-muted-foreground">Total Students</span><span className="text-sm font-medium">{attendanceStats.total}</span></div>
+                    <div className="px-4 py-3 flex justify-between"><span className="text-sm text-muted-foreground">Instructor</span><span className="text-sm font-medium">{user?.name || "Prof. M. Brown"}</span></div>
+                    <div className="px-4 py-3 flex justify-between"><span className="text-sm text-muted-foreground">Room</span><span className="text-sm font-medium">A-317</span></div>
                   </div>
                 </div>
               </div>
             ) : (
               <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-                <div className="text-center">
-                  <BarChart3 className="mx-auto h-12 w-12 opacity-50" />
-                  <p className="mt-2">Select a class to view attendance statistics</p>
-                </div>
+                <div className="text-center"><BarChart3 className="mx-auto h-12 w-12 opacity-50" /><p className="mt-2">Select a class to view statistics</p></div>
               </div>
             )}
           </CardContent>
-          {selectedClass && (
-            <CardFooter>
-              <Button className="w-full" variant="outline">
-                <FileText className="mr-2 h-4 w-4" />
-                Generate Attendance Report
-              </Button>
-            </CardFooter>
-          )}
+          {selectedClass && <CardFooter><Button className="w-full" variant="outline"><FileText className="mr-2 h-4 w-4" /> Generate Report</Button></CardFooter>}
         </Card>
       </div>
     </DashLayout>

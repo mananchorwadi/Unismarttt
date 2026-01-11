@@ -33,7 +33,7 @@ export default function RequestCallbackPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   const [formData, setFormData] = useState({
     facultyId: "",
     subject: "",
@@ -144,13 +144,13 @@ export default function RequestCallbackPage() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="faculty">Select Faculty</Label>
+                <Label htmlFor="faculty">Select Alumini</Label>
                 <Select
                   value={formData.facultyId || undefined}
                   onValueChange={(value) => setFormData({ ...formData, facultyId: value || "" })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Choose a faculty member" />
+                    <SelectValue placeholder="Choose a Alumini member" />
                   </SelectTrigger>
                   <SelectContent>
                     {facultyLoading ? (
@@ -251,7 +251,7 @@ export default function RequestCallbackPage() {
                       </div>
                       {getStatusBadge(request.status)}
                     </div>
-                    
+
                     <div className="flex items-center justify-between text-sm text-muted-foreground">
                       <span>Preferred: {new Date(request.preferredTime).toLocaleString()}</span>
                       <span>Requested: {new Date(request.createdAt).toLocaleDateString()}</span>
