@@ -7,18 +7,18 @@ This is a comprehensive university management system built with modern web techn
 ## System Architecture
 
 ### Frontend Architecture
-- **Framework**: React with TypeScript
+- **Framework**: React with JavaScript
 - **Build Tool**: Vite for fast development and optimized builds
 - **Styling**: Tailwind CSS with custom theme system
 - **UI Components**: Radix UI primitives with custom shadcn/ui components
 - **State Management**: TanStack Query for server state management
-- **Routing**: Wouter for lightweight client-side routing
+- **Routing**: React-router-dom
 - **Forms**: React Hook Form with Zod validation
 - **Animations**: Framer Motion for smooth transitions
 
 ### Backend Architecture
 - **Runtime**: Node.js with Express.js framework
-- **Language**: TypeScript with ES modules
+- **Language**: JavaScript with ES modules
 - **Authentication**: Passport.js with local strategy and session-based auth
 - **Session Management**: Express sessions with memory store fallback
 - **Password Security**: Node.js crypto module with scrypt hashing
@@ -161,7 +161,7 @@ Complete bidirectional communication system allowing students to send callback r
 ## Changelog
 
 - August 18, 2025. Implemented complete Student-Faculty Request Callback system with real-time bidirectional communication
-- August 18, 2025. Added comprehensive error handling and TypeScript safety for all callback components
+- August 18, 2025. Added comprehensive error handling for all callback components
 - August 18, 2025. Eliminated all application errors and optimized performance with proper query typing
 - January 06, 2025. Fixed database connectivity issues and implemented fallback memory storage
 - January 06, 2025. Optimized authentication forms with better error handling and user feedback
