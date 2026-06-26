@@ -1,0 +1,1 @@
+- [esbuild-jsx-conversion](esbuild-jsx-conversion.md) — converting .tsx→.jsx: use `esbuild file.tsx --jsx=preserve --bundle=false` (no --loader flag), then strip the `"use strict"` it adds.
