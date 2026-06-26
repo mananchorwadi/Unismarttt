@@ -107,8 +107,7 @@ This is a comprehensive university management system built with modern web techn
 
 ### Build Process
 - **Development**: `npm run dev` starts both frontend and backend
-- **Production Build**: `npm run build` creates optimized bundles
-- **Type Checking**: `npm run check` validates TypeScript
+- **Production Build**: `npm run build` creates optimized bundle
 - **Database**: `npm run db:push` applies schema changes
 
 ### Environment Configuration
