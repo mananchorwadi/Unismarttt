@@ -83,8 +83,7 @@ This is a comprehensive university management system built with modern web techn
 ## External Dependencies
 
 ### Core Framework Dependencies
-- **React ecosystem**: React, React DOM, React Router (Wouter)
-- **TypeScript**: Full type safety across the application
+- **React ecosystem**: React, React DOM, React-router-dom
 - **Vite**: Development server and build optimization
 - **Express**: Web framework for API endpoints
 
