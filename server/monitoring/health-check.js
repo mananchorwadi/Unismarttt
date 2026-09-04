@@ -1,4 +1,4 @@
-import { storage } from "./storage.js";
+import { storage } from "../storage/index.js";
 
 export async function healthCheck() {
   try {

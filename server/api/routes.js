@@ -1,7 +1,7 @@
 import { createServer } from "http";
 import { WebSocketServer, WebSocket } from "ws";
-import { setupAuth } from "./auth.js";
-import { storage } from "./storage.js";
+import { setupAuth } from "../auth/index.js";
+import { storage } from "../storage/index.js";
 import {
   createCallbackRequestSchema,
   updateCallbackRequestSchema,
@@ -12,7 +12,7 @@ import {
   getFreeClassroomsSchema
 } from "@shared/schema";
 import { ZodError } from "zod";
-import { formatZodError } from "./utils.js";
+import { formatZodError } from "../utils/validation.js";
 
 const wsConnections = new Map();
 

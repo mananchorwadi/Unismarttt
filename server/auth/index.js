@@ -1,11 +1,11 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import session from "express-session";
-import { storage } from "./storage.js";
-import { hashPassword, comparePasswords } from "./memory-storage.js";
+import { storage } from "../storage/index.js";
+import { hashPassword, comparePasswords } from "../storage/memory-storage.js";
 import { loginSchema, registerUserSchema } from "@shared/schema";
 import { ZodError } from "zod";
-import { formatZodError } from "./utils.js";
+import { formatZodError } from "../utils/validation.js";
 
 export function setupAuth(app) {
   const sessionSettings = {

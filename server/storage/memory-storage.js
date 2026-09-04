@@ -557,10 +557,6 @@ export class MemoryStorage {
     });
   }
 
-  async getAllUsers() {
-    return users;
-  }
-
   async getFreeClassrooms(day, startTime, endTime) {
     const occupiedRoomIds = timetable
       .filter(entry =>

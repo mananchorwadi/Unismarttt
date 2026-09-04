@@ -1,8 +1,7 @@
 import express from "express";
-import { registerRoutes } from "./routes.js";
-import { setupVite, serveStatic, log } from "./vite.js";
-import { initializeDatabase } from "./initialize-db.js";
-import { errorHandler } from "./error-handler.js";
+import { registerRoutes } from "./api/routes.js";
+import { setupVite, serveStatic, log } from "./infrastructure/vite.js";
+import { errorHandler } from "./middleware/error-handler.js";
 
 const app = express();
 app.use(express.json());

@@ -6,6 +6,41 @@ This is a comprehensive university management system built with modern web techn
 
 ## System Architecture
 
+### Repository Layout
+
+The project is organized as a small full-stack application with clear boundaries:
+
+```text
+client/
+  src/
+    app/              Application providers and route definitions
+    components/       Reusable auth, dashboard, theme, and UI components
+    hooks/            Shared React hooks
+    lib/              Client utilities and API/query helpers
+    pages/            Route-level screens grouped by product area
+      academics/      Courses, assignments, grades, and schedule
+      auth/           Login and registration
+      callbacks/      Student/faculty callback requests
+      communication/  Messaging
+      dashboard/      Home dashboard
+      faculty/        Faculty-only screens
+      settings/       Account settings
+      student/        Student-only screens
+      system/         Error and fallback screens
+server/
+  api/               HTTP and WebSocket route registration
+  auth/              Passport and session authentication
+  database/          Database initialization helpers
+  infrastructure/    Vite development and static-file serving
+  middleware/        Express middleware
+  monitoring/        Health checks
+  storage/           Storage interface and in-memory implementation
+  utils/             Server-side validation helpers
+scripts/              Development and database utility scripts
+shared/               Schema and validation shared by client and server
+drizzle/              Database configuration and migrations
+```
+
 ### Frontend Architecture
 - **Framework**: React with JavaScript
 - **Build Tool**: Vite for fast development and optimized builds
